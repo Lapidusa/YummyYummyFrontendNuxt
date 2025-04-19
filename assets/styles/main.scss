@@ -1,0 +1,14 @@
+@use 'fonts';
+@use 'mixins';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+*{
+  box-sizing: border-box;
+  @apply font-nunito;
+}
+.container{
+  max-width: 1680px;
+  margin: auto;
+}
