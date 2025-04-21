@@ -1,93 +1,71 @@
-<script setup>
-import { ref, watch, defineProps, defineEmits } from "vue";
+<script setup lang="ts">
+import { ref, watch, onMounted } from 'vue'
 
-const props = defineProps({
-  modelValue: {
-    type: String,
-    default: ''
+const modelValue = defineModel<string>({ default: '' })
+const error = ref('')
+const inputRef = ref<HTMLInputElement | null>(null)
+
+const formatPhone = (digits: string): string => {
+  digits = digits.replace(/\D/g, '').replace(/^8/, '7').slice(0, 11)
+  if (!digits) return ''
+
+  const parts = ['+7']
+  if (digits.length > 1) parts.push(' (' + digits.slice(1, 4))
+  if (digits.length >= 4) parts.push(') ' + digits.slice(4, 7))
+  if (digits.length >= 7) parts.push('-' + digits.slice(7, 9))
+  if (digits.length >= 9) parts.push('-' + digits.slice(9, 11))
+
+  return parts.join('')
+}
+
+const normalizeDigits = (value: string): string => {
+  let digits = value.replace(/\D/g, '')
+  if (!digits.startsWith('7')) {
+    digits = '7' + digits.replace(/^8|^7/, '')
   }
-});
-const phoneNumber = ref('');
-const emit = defineEmits(['update:modelValue']);
+  return digits.slice(0, 11)
+}
 
-const formattedPhoneNumber = ref(props.modelValue);
+const onInput = (e: Event) => {
+  const target = e.target as HTMLInputElement
+  const digits = normalizeDigits(target.value)
+  modelValue.value = digits
+  error.value = digits.length < 11 ? 'Введите полный номер из 11 цифр' : ''
+}
 
-watch(formattedPhoneNumber, (newValue) => {
-  emit('update:modelValue', newValue);
-});
+const updateInputField = () => {
+  const el = inputRef.value
+  if (el) el.value = formatPhone(modelValue.value)
+}
 
-const mask = (event) => {
-  const input = event.target;
-  const keyCode = event.keyCode;
-  const pos = input.selectionStart;
+watch(modelValue, () => {
+  updateInputField()
+})
 
-  if (pos < 3) event.preventDefault();
-
-  const matrix = "+7 (___) ___-__-__";
-  let i = 0;
-  const def = matrix.replace(/\D/g, "");
-  const val = input.value.replace(/\D/g, "");
-  let new_value = matrix.replace(/[_\d]/g, (a) => {
-    return i < val.length ? val.charAt(i++) || def.charAt(i) : a;
-  });
-
-  i = new_value.indexOf("_");
-  if (i !== -1) {
-    i < 5 && (i = 3);
-    new_value = new_value.slice(0, i);
+onMounted(() => {
+  if (modelValue.value) {
+    modelValue.value = normalizeDigits(modelValue.value)
+    updateInputField()
   }
-
-  const reg = matrix.substr(0, input.value.length).replace(/_+/g, (a) => {
-    return "\\d{1," + a.length + "}";
-  }).replace(/[+()]/g, "\\$&");
-
-  const regex = new RegExp("^" + reg + "$");
-  if (!regex.test(input.value) || input.value.length < 5 || (keyCode > 47 && keyCode < 58)) {
-    input.value = new_value;
-  }
-
-  if (event.type === "blur" && input.value.length < 5) {
-    input.value = "";
-  }
-
-  phoneNumber.value = input.value;
-  formattedPhoneNumber.value = formatPhoneNumber(phoneNumber.value);
-};
-
-
-const formatPhoneNumber = (number) => {
-  const cleaned = number.replace(/\D/g, '');
-
-  if (cleaned.length === 11 && cleaned.startsWith('7')) {
-    return cleaned;
-  } else if (cleaned.length === 10) {
-    return '7' + cleaned;
-  }
-
-  return cleaned;
-};
-const blurHandler = (event) => {
-  if (event.target.value.length < 5) {
-    event.target.value = "";
-    formattedPhoneNumber.value = "";
-  }
-};
+})
 </script>
 
 <template>
-  <input
+  <div class="flex flex-col gap-2">
+    <input
+      ref="inputRef"
       type="tel"
+      @input="onInput"
       placeholder="+7 (___) ___-__-__"
-      class="border border-gray-300 rounded-md p-2 w-full"
-      v-model="phoneNumber"
-      @input="mask"
-      @focus="mask"
-      @blur="blurHandler"
-  />
+      maxlength="18"
+      class="border rounded-full px-4 py-2 w-full"
+    />
+    <p v-if="error" class="text-red-500 text-sm">{{ error }}</p>
+  </div>
 </template>
 
 <style scoped lang="scss">
 input {
-  @apply border border-solid border-orange rounded-2xl w-full;
+  @apply border border-solid border-orange w-full;
 }
 </style>

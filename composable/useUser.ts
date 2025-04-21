@@ -1,7 +1,5 @@
-// composables/user.ts
 import { useUserStore } from '@store/user'
 import { useApi } from '@composable/api'
-import type {VerifyRequest} from "@interfaces/auth";
 
 export const useUser = () => {
   const api = useApi()
@@ -23,6 +21,20 @@ export const useUser = () => {
     }
   }
 
+  const updateUser = async (formData: FormData) => {
+    console.log(formData)
+    const res = await api.put('/user/update-user/', formData, {
+      headers: {
+        token: localStorage.getItem('token') || '',
+        'Content-Type': 'multipart/form-data', // это важно!
+      },
+    })
+
+    if (!res.status) {
+      console.error('Ошибка при обновлении профиля');
+    }
+  }
+
   const logOut = async () => {
     const token = localStorage.getItem('token')
     const response = await api.post("/user/logout", {}, {
@@ -35,5 +47,5 @@ export const useUser = () => {
     return response.data
   }
 
-  return { fetchUser, logOut}
+  return { fetchUser, logOut, updateUser}
 }

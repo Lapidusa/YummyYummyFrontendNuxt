@@ -1,8 +1,9 @@
 <script setup lang="ts">
   import {useAuth} from "@composable/useAuth";
   import {useUser} from "@composable/useUser";
-  import {useUserStore} from "@store/user";
+  import {useCity} from "@composable/useCity";
   const isDropdownOpen = ref<boolean>(false);
+  const isModalCityOpen = ref<boolean>(false);
   const isAuthorized = ref<boolean>(false);
   const isRole = ref<0|1|2|3|4>(0);
   const userPhoneNumber = ref<string>('');
@@ -12,10 +13,15 @@
   const changeModal = ref<boolean>(false);
   const Auth = useAuth()
   const UseUser = useUser()
+  const UseCity = useCity()
   let timeoutId: any = null;
 
+  const activeCity = ref('')
+  const allCities = ref('')
+
   const sendCode = async () => {
-    if (userPhoneNumber.value.length === 10) {
+    console.log(userPhoneNumber.value);
+    if (userPhoneNumber.value.length !== 11) {
       error.value = true;
     } else {
       const res = await Auth.sendSms({phone_number: userPhoneNumber.value});
@@ -26,78 +32,87 @@
     }
   }
 
-    const LogIn = async () => {
-      const smsCode = code.value.join('');
-      const res = await Auth.verifyCode({phone_number: userPhoneNumber.value, code: smsCode});
+  const LogIn = async () => {
+    const smsCode = code.value.join('');
+    const res = await Auth.verifyCode({phone_number: userPhoneNumber.value, code: smsCode});
 
-      if(res.result) {
-        isAuthorized.value = true;
-        isModalOpen.value = false;
-        error.value = false;
-        localStorage.setItem("token", res.token);
-        const user = await UseUser.fetchUser()
-        isRole.value = user.role;
-      } else{
-        error.value = true;
-      }
-    }
-
-    const LogOut = async () => {
-      const res = await UseUser.logOut()
-      if (res.result) {
-        isAuthorized.value = false;
-        isRole.value = 0;
-      }
-    }
-
-    const moveFocus = ({event, direction}: { event: any, direction: any }) => {
-      const current = event.target;
-      if (current.value.length >= current.maxLength) {
-        const next = current.nextElementSibling;
-        if (next) {
-          next.focus();
-        }
-      } else if (current.value.length === 0 && direction === -1) {
-        const prev = current.previousElementSibling;
-        if (prev) {
-          prev.focus();
-        }
-      }
-    };
-    const openDropdown = () => {
-      clearTimeout(timeoutId);
-      isDropdownOpen.value = true;
-    };
-
-    const startCloseDropdown = () => {
-      timeoutId = setTimeout(() => {
-        isDropdownOpen.value = false;
-      }, 200);
-    };
-    const openModal = () => {
-      isModalOpen.value = true;
-    };
-
-    const closeModal = () => {
+    if(res.result) {
+      isAuthorized.value = true;
+      changeModal.value = false;
       isModalOpen.value = false;
-    };
-    onMounted(async () => {
-      const token = localStorage.getItem('token');
-      if (token) {
-        const user = await UseUser.fetchUser()
-        isAuthorized.value = true;
-        isRole.value = user.role;
+      error.value = false;
+      localStorage.setItem("token", res.token);
+      const user = await UseUser.fetchUser()
+      isRole.value = user.role;
+    } else{
+      error.value = true;
+    }
+  }
+
+  const LogOut = async () => {
+    const res = await UseUser.logOut()
+    if (res.result) {
+      isAuthorized.value = false;
+      isRole.value = 0;
+    }
+  }
+
+  const moveFocus = ({event, direction}: { event: any, direction: any }) => {
+    const current = event.target;
+    if (current.value.length >= current.maxLength) {
+      const next = current.nextElementSibling;
+      if (next) {
+        next.focus();
       }
-    })
+    } else if (current.value.length === 0 && direction === -1) {
+      const prev = current.previousElementSibling;
+      if (prev) {
+        prev.focus();
+      }
+    }
+  };
+  const openDropdown = () => {
+    clearTimeout(timeoutId);
+    isDropdownOpen.value = true;
+  };
+
+  const startCloseDropdown = () => {
+    timeoutId = setTimeout(() => {
+      isDropdownOpen.value = false;
+    }, 200);
+  };
+  const openModal = () => {
+    isModalOpen.value = true;
+  };
+
+  const closeModal = () => {
+    isModalOpen.value = false;
+    changeModal.value = false;
+  };
+
+  onMounted(async () => {
+    allCities.value = await UseCity.getAllCity()
+    if (!activeCity.value) {
+      isModalCityOpen.value = true
+    }
+    const token = localStorage.getItem('token');
+    if (token) {
+      const user = await UseUser.fetchUser()
+      isAuthorized.value = true;
+      isRole.value = user.role;
+    }
+  })
 </script>
 
 <template>
   <div class="header container">
     <div class="header__left">
-      <img class="header__logo" src="@assets/icons/logo.svg" alt="logo"/>
+      <NuxtLink to="/">
+        <img class="header__logo" src="@assets/icons/logo.svg" alt="logo"/>
+      </NuxtLink>
       <div class="header__location">
         <div class="header__title">Доставка пиццы</div>
-        <div class="header__city">Москва</div>
+        <div class="header__city">{{activeCity}}</div>
       </div>
     </div>
     <div class="header__right">
@@ -116,17 +131,17 @@
         <p class="header__button-text">Админ</p>
       </NuxtLink>
       <div class="relative">
-        <button v-if="isAuthorized" class="header__button header__button--outline"
+        <NuxtLink to="/profile" v-if="isAuthorized" class="header__button header__button--outline"
         @mouseenter="openDropdown" @mouseleave="startCloseDropdown">
 
           <div class="header__button-icon"></div>
           <p class="header__button-text">Профиль</p>
-        </button>
+        </NuxtLink>
         <div v-show="isDropdownOpen" class="absolute z-10 mt-2 bg-white w-fill divide-gray-100 rounded-lg shadow"
         @mouseenter="openDropdown" @mouseleave="startCloseDropdown">
           <ul class=" py-2 text-sm">
             <li>
-              <a href="#" class="block px-4 py-2 hover:bg-orange hover:text-white dark:hover:bg-background-dark-light dark:hover:text-main-contrast">Мой профиль</a>
+              <NuxtLink href="/profile" class="block px-4 py-2 hover:bg-orange hover:text-white dark:hover:bg-background-dark-light dark:hover:text-main-contrast">Мой профиль</NuxtLink>
             </li>
             <li>
               <a href="#" class="block px-4 py-2 hover:bg-orange hover:text-white dark:hover:bg-background-dark-light dark:hover:text-main-contrast">Заказы</a>
@@ -158,10 +173,10 @@
 
         <PhoneNumber v-model="userPhoneNumber" />
 
-        <p v-if="error" class="modal-header__error">Введите полный номер</p>
+        <p v-show="error" class="modal-header__error">Введите полный номер</p>
 
-        <button @click="sendCode()" class="modal-header__btn btnLogIn w-full justify-center">
-          <p class="btnLogIn__text">Получить код в SMS</p>
+        <button @click="sendCode()" class="modal-header__btn">
+          <p class="modal-header__btn-text">Получить код в SMS</p>
         </button>
 
         <div @click="closeModal" type="button" class="modal-header__close cursor-pointer">
@@ -194,6 +209,16 @@
       </div>
     </div>
   </div>
+
+<!--  <div-->
+<!--  id="static-modal" data-modal-backdrop="static"-->
+<!--  aria-hidden="true"-->
+<!--  :class="{'hidden': !isModalCityOpen, 'modal-header': isModalCityOpen}"-->
+<!--  >-->
+<!--    <div class="modal-header modal-header&#45;&#45;active">-->
+<!--    asdasd-->
+<!--    </div>-->
+<!--  </div>-->
 </template>
 
 <style scoped lang="sass">
@@ -223,25 +248,30 @@
 
       &:hover .header__button-icon
         background-image: url('@/assets/icons/profile-hover.svg')
-  .modal-header
-    @apply fixed inset-0 flex items-center justify-center bg-black bg-opacity-50
+.modal-header
+  @apply fixed inset-0 flex items-center flex-col justify-center bg-black bg-opacity-50
 
-    &--active
-      @apply bg-white rounded-lg shadow-lg p-6 w-96 z-50 relative
+  &--active
+    @apply bg-white rounded-3xl shadow-lg p-6 w-10/12 h-4/6 z-50 relative
 
-    &__title
-      @apply text-3xl font-semibold mb-4
+  &__title
+    @apply text-3xl font-semibold mb-4
 
-    &__description
-      @apply mb-4
-    &__img
-      background-image: url('@/assets/images/phone.png')
-    &__error
-      @apply text-red-500
-    &__text
-      @apply flex flex-col
-    &__top
-      @apply flex items-center
+  &__description
+    @apply mb-4
+  &__img
+    background-image: url('@/assets/images/phone.png')
+  &__error
+    @apply text-red-500
+  &__text
+    @apply flex flex-col
+  &__top
+    @apply flex items-center
+  &__btn
+    @apply w-full
+    @include button-orange-gradient
+
+    //&-text
 
   &__button-icon
     width: 14px
