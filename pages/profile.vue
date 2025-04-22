@@ -8,7 +8,9 @@ const router = useRouter()
 const { updateUser } = useUser()
 const config = useRuntimeConfig()
 const userStore = useUserStore()
+const errorUpdate = ref<string>("");
 const user = computed(() => userStore.user)
+
 const form = ref({
   phone: undefined as string | undefined,
   name: undefined as string | undefined,
@@ -42,8 +44,10 @@ const submitForm = async () => {
   if (form.value.date_of_birth) formData.append('date_of_birth', form.value.date_of_birth)
   if (form.value.image) formData.append('image', form.value.image)
   const res = await updateUser(formData);
-  console.log([...formData.entries()])
+  if (!res.result){
+    errorUpdate.value = res.message;
 
+  }
 }
 
 onMounted(() =>{

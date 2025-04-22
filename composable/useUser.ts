@@ -26,13 +26,10 @@ export const useUser = () => {
     const res = await api.put('/user/update-user/', formData, {
       headers: {
         token: localStorage.getItem('token') || '',
-        'Content-Type': 'multipart/form-data', // это важно!
+        'Content-Type': 'multipart/form-data'
       },
     })
-
-    if (!res.status) {
-      console.error('Ошибка при обновлении профиля');
-    }
+    return res.data
   }
 
   const logOut = async () => {

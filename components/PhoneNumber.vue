@@ -64,8 +64,10 @@ onMounted(() => {
   </div>
 </template>
 
-<style scoped lang="scss">
-input {
-  @apply border border-solid border-orange w-full;
-}
+<style scoped lang="sass">
+input
+  @apply border border-solid border-orange w-full
+  //&:focus-visible
+
+
 </style>

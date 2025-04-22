@@ -2,6 +2,8 @@
   import {useAuth} from "@composable/useAuth";
   import {useUser} from "@composable/useUser";
   import {useCity} from "@composable/useCity";
+  import type {City} from "@interfaces/city";
+  import {useCityStore} from "@store/city";
   const isDropdownOpen = ref<boolean>(false);
   const isModalCityOpen = ref<boolean>(false);
   const isAuthorized = ref<boolean>(false);
@@ -14,13 +16,14 @@
   const Auth = useAuth()
   const UseUser = useUser()
   const UseCity = useCity()
+  const cityStore = useCityStore()
+  const city = computed(() => cityStore.city)
   let timeoutId: any = null;
 
-  const activeCity = ref('')
-  const allCities = ref('')
+  const activeCity = ref<City | null>(null)
+  const allCities = ref<{ cities: City[] }>({ cities: [] })
 
   const sendCode = async () => {
-    console.log(userPhoneNumber.value);
     if (userPhoneNumber.value.length !== 11) {
       error.value = true;
     } else {
@@ -90,11 +93,27 @@
     changeModal.value = false;
   };
 
+  const changeCity = (id: string) => {
+    const city = allCities.value.cities.find((city: { id: string; name: string})  => city.id === id);
+    if (city) {
+      activeCity.value = city
+      isModalCityOpen.value = false
+      cityStore.setCity(city);
+    }
+  }
+  const changeModalCities = () => {
+    isModalCityOpen.value = !isModalCityOpen.value;
+  }
+
   onMounted(async () => {
     allCities.value = await UseCity.getAllCity()
+    cityStore.initCityFromStorage()
+
+    activeCity.value = city.value;
     if (!activeCity.value) {
-      isModalCityOpen.value = true
+      changeModalCities()
     }
+
     const token = localStorage.getItem('token');
     if (token) {
       const user = await UseUser.fetchUser()
@@ -112,7 +131,7 @@
       </NuxtLink>
       <div class="header__location">
         <div class="header__title">Доставка пиццы</div>
-        <div class="header__city">{{activeCity}}</div>
+        <button @click="changeModalCities()" v-if="activeCity" class="header__city">{{activeCity.name}}</button>
       </div>
     </div>
     <div class="header__right">
@@ -210,15 +229,25 @@
     </div>
   </div>
 
-<!--  <div-->
-<!--  id="static-modal" data-modal-backdrop="static"-->
-<!--  aria-hidden="true"-->
-<!--  :class="{'hidden': !isModalCityOpen, 'modal-header': isModalCityOpen}"-->
-<!--  >-->
-<!--    <div class="modal-header modal-header&#45;&#45;active">-->
-<!--    asdasd-->
-<!--    </div>-->
-<!--  </div>-->
+  <div
+  id="static-modal" data-modal-backdrop="static"
+  aria-hidden="true"
+  :class="{'hidden': !isModalCityOpen, 'modal-header': isModalCityOpen}"
+  >
+    <div class="modal-header modal-header--active">
+      <div class="modal-header__title">
+        Выберите свой город
+      </div>
+      <div class="modal-header__cities">
+        <div class="modal-header__city" v-for="city in allCities.cities" :key="city.id">
+          <button @click="changeCity(city.id)" class="modal-header__text--hover">{{city.name}}</button>
+        </div>
+      </div>
+      <div @click="changeModalCities" v-if="activeCity" type="button" class="modal-header__close cursor-pointer">
+        <img class="closeModal" src="../assets/icons/closeWhite.svg" alt="" />
+      </div>
+    </div>
+  </div>
 </template>
 
 <style scoped lang="sass">
@@ -232,7 +261,7 @@
     @apply flex gap-5
 
   &__city
-    @apply text-orange
+    @apply text-orange text-left -mt-1
 
   &__location
     @apply flex flex-col justify-center
@@ -249,36 +278,36 @@
       &:hover .header__button-icon
         background-image: url('@/assets/icons/profile-hover.svg')
 .modal-header
-  @apply fixed inset-0 flex items-center flex-col justify-center bg-black bg-opacity-50
+  @apply fixed inset-0 bg-black bg-opacity-50 flex flex-col gap-3
 
   &--active
-    @apply bg-white rounded-3xl shadow-lg p-6 w-10/12 h-4/6 z-50 relative
+    @apply bg-white rounded-3xl -translate-y-2/4 -translate-x-1/2 absolute top-1/2 left-1/2 shadow-lg p-6 w-fit h-fit z-50
 
   &__title
-    @apply text-3xl font-semibold mb-4
+    @apply text-3xl font-semibold
 
-  &__description
-    @apply mb-4
   &__img
     background-image: url('@/assets/images/phone.png')
+    width: 60px
+    height: 60px
   &__error
     @apply text-red-500
   &__text
-    @apply flex flex-col
+    @apply flex flex-col w-2/3 gap-3
   &__top
-    @apply flex items-center
+    @apply flex items-center justify-between
   &__btn
     @apply w-full
     @include button-orange-gradient
-
-    //&-text
+  &__city
+    @apply w-fit
+  &__text--hover
+    @apply hover:text-orange duration-300 ease-in cursor-pointer w-fit
 
   &__button-icon
     width: 14px
     height: 16px
-    background-image: url('@/assets/icons/profile.svg')
-    background-size: cover
-    background-repeat: no-repeat
+    background: url('@/assets/icons/profile.svg') no-repeat
     transition: background-image 0.3s ease
 
 .closeModal
