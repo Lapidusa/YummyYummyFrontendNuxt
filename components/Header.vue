@@ -13,6 +13,8 @@
   const error = ref<boolean>(false);
   const isModalOpen = ref<boolean>(false);
   const changeModal = ref<boolean>(false);
+  const isLoading = ref<boolean>(false);
+  const searchTerm = ref<string>('');
   const Auth = useAuth()
   const UseUser = useUser()
   const UseCity = useCity()
@@ -22,6 +24,15 @@
 
   const activeCity = ref<City | null>(null)
   const allCities = ref<{ cities: City[] }>({ cities: [] })
+
+  const visibleCities = computed(()=>{
+    if (!searchTerm.value.length) return allCities.value.cities
+    const term = searchTerm.value.toLowerCase()
+
+    return allCities.value.cities.filter((city) => (
+      city.name.toLowerCase().includes(term)
+    ));
+  });
 
   const sendCode = async () => {
     if (userPhoneNumber.value.length !== 11) {
@@ -99,8 +110,10 @@
       activeCity.value = city
       isModalCityOpen.value = false
       cityStore.setCity(city);
+      isLoading.value = true;
     }
   }
+
   const changeModalCities = () => {
     isModalCityOpen.value = !isModalCityOpen.value;
   }
@@ -110,9 +123,9 @@
     cityStore.initCityFromStorage()
 
     activeCity.value = city.value;
-    if (!activeCity.value) {
-      changeModalCities()
-    }
+    if (activeCity.value) isLoading.value = true;
+
+    if (!activeCity.value) changeModalCities()
 
     const token = localStorage.getItem('token');
     if (token) {
@@ -124,11 +137,9 @@
 </script>
 
 <template>
-  <div class="header container">
+  <div class="header container" v-if="isLoading">
     <div class="header__left">
-      <NuxtLink to="/">
-        <img class="header__logo" src="@assets/icons/logo.svg" alt="logo"/>
-      </NuxtLink>
+      <Logo/>
       <div class="header__location">
         <div class="header__title">Доставка пиццы</div>
         <button @click="changeModalCities()" v-if="activeCity" class="header__city">{{activeCity.name}}</button>
@@ -173,6 +184,7 @@
       </div>
     </div>
   </div>
+
   <div
   id="static-modal" data-modal-backdrop="static"
   aria-hidden="true"
@@ -206,8 +218,14 @@
 
     <div v-else>
       <div class="modal-header modal-header--active">
-        <h2 class="modal-header__title text-xl">Вход в аккаунт</h2>
-        <p class="modal-header__description">Введите СМС-код</p>
+        <div class="modal-header__top">
+          <div class="modal-header__text">
+            <h2 class="modal-header__title text-xl">Вход в аккаунт</h2>
+            <p class="modal-header__description">Введите СМС-код</p>
+          </div>
+          <div class="modal-header__img"></div>
+
+        </div>
         <div class="modal-header__otp otp-container flex items-center justify-center gap-4">
           <input type="text" maxlength="1" class="otp-input" v-model="code[0]" @input="moveFocus({event : $event, direction : 1})" />
           <input type="text" maxlength="1" class="otp-input" v-model="code[1]" @input="moveFocus({event : $event, direction : 1})" />
@@ -216,7 +234,7 @@
           <input type="text" maxlength="1" class="otp-input" v-model="code[4]" @input="moveFocus({event : $event, direction : 1})" />
           <input type="text" maxlength="1" class="otp-input" v-model="code[5]" @input="moveFocus({event : $event, direction : 1})" />
         </div>
-        <div v-if="error" class="modal-header__error text-red-500">
+        <div v-if="error" class="modal-header__error text-red">
           <p class="text-center py-2">Неверный код или срок действия кода истёк</p>
         </div>
         <button @click="LogIn" class="modal-header__btn btnLogIn w-full justify-center">
@@ -238,13 +256,24 @@
       <div class="modal-header__title">
         Выберите свой город
       </div>
+      <div class="modal-header__search">
+        <img class="modal-header__search-icon" src="@assets/icons/search.svg" alt="Search"/>
+        <input type="search" class="modal-header__search" v-model.trim="searchTerm">
+        <button
+                v-if="searchTerm"
+                class="clear-button"
+                @click.prevent="searchTerm = ''"
+        >
+          <img class="modal-header__search-clean" src="@assets/icons/x-letter.svg" alt="Clear Input"/>
+        </button>
+      </div>
       <div class="modal-header__cities">
-        <div class="modal-header__city" v-for="city in allCities.cities" :key="city.id">
+        <div class="modal-header__city" v-for="city in visibleCities" :key="city.id">
           <button @click="changeCity(city.id)" class="modal-header__text--hover">{{city.name}}</button>
         </div>
       </div>
       <div @click="changeModalCities" v-if="activeCity" type="button" class="modal-header__close cursor-pointer">
-        <img class="closeModal" src="../assets/icons/closeWhite.svg" alt="" />
+        <img class="closeModal" src="@assets/icons/closeWhite.svg" alt="" />
       </div>
     </div>
   </div>
@@ -279,7 +308,12 @@
         background-image: url('@/assets/icons/profile-hover.svg')
 .modal-header
   @apply fixed inset-0 bg-black bg-opacity-50 flex flex-col gap-3
-
+  &__search
+    @apply relative
+    &-icon
+      @apply absolute top-1/4 left-2 z-10
+    &-clean
+      @apply absolute top-1/4 right-2 z-10 fill-orange
   &--active
     @apply bg-white rounded-3xl -translate-y-2/4 -translate-x-1/2 absolute top-1/2 left-1/2 shadow-lg p-6 w-fit h-fit z-50
 
@@ -291,7 +325,7 @@
     width: 60px
     height: 60px
   &__error
-    @apply text-red-500
+    @apply text-red
   &__text
     @apply flex flex-col w-2/3 gap-3
   &__top
@@ -304,11 +338,7 @@
   &__text--hover
     @apply hover:text-orange duration-300 ease-in cursor-pointer w-fit
 
-  &__button-icon
-    width: 14px
-    height: 16px
-    background: url('@/assets/icons/profile.svg') no-repeat
-    transition: background-image 0.3s ease
+
 
 .closeModal
   @apply absolute top-1 -right-10;

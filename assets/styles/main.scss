@@ -12,3 +12,28 @@
   max-width: 1680px;
   margin: auto;
 }
+.containerA{
+  padding: 20px;
+}
+input[type=search]{
+  @apply border-2 border-solid border-orange w-full rounded-full pl-9 py-2 pr-2
+}
+input[type=tel], input[type=text]{
+  @apply border border-solid border-orange w-full rounded-full px-4 py-2
+}
+input:focus-visible{
+  @apply outline-none
+}
+input[type="search"]::-webkit-search-cancel-button,
+input[type="search"]::-webkit-search-decoration,
+input[type="search"]::-webkit-search-results-button,
+input[type="search"]::-webkit-search-results-decoration {
+  display: none;
+}
+
+input[type="search"]::-ms-clear,
+input[type="search"]::-ms-reveal {
+  display: none;
+  width: 0;
+  height: 0;
+}

@@ -12,8 +12,11 @@ export default {
    extend: {
        colors: {
          "orange": '#FE9200',
+         "yellow": '#FFC746',
          "lightGray": '#FBFBFB',
-         "Gray": '#EFF0F3',
+         "gray": '#EFF0F3',
+         "green": '#17B404',
+         "red": '#F63204',
        },
        fontFamily: {
             nunito: ['Nunito', 'sans-serif']

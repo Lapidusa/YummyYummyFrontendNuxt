@@ -1,11 +1,7 @@
-<script setup lang="ts">
+<script>
 
 </script>
-
 <template>
-
+  <div class="">статистика</div>
 </template>
-
-<style scoped lang="sass">
-
-</style>
+<style lang="sass"></style>

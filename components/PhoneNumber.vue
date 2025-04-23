@@ -58,16 +58,12 @@ onMounted(() => {
       @input="onInput"
       placeholder="+7 (___) ___-__-__"
       maxlength="18"
-      class="border rounded-full px-4 py-2 w-full"
+      class="border rounded-full w-full"
     />
-    <p v-if="error" class="text-red-500 text-sm">{{ error }}</p>
+    <p v-if="error" class="text-red text-sm">{{ error }}</p>
   </div>
 </template>
 
 <style scoped lang="sass">
-input
-  @apply border border-solid border-orange w-full
-  //&:focus-visible
-
 
 </style>
