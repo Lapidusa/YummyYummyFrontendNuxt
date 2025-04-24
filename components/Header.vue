@@ -126,12 +126,13 @@
     if (activeCity.value) isLoading.value = true;
 
     if (!activeCity.value) changeModalCities()
-
     const token = localStorage.getItem('token');
     if (token) {
       const user = await UseUser.fetchUser()
-      isAuthorized.value = true;
-      isRole.value = user.role;
+      if (user.result){
+        isAuthorized.value = true;
+        isRole.value = user.role;
+      }
     }
   })
 </script>

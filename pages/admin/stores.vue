@@ -8,9 +8,8 @@
   const allCities = ref<{ cities: City[] }>({ cities: [] })
   const searchTerm = ref<string>('');
   const activeCity = ref<City | null>(null)
-  const isModalCityOpen = ref<boolean>(false);
-  const changeModal = ref<boolean>(false);
   const editableCity = ref<Partial<City>>({ name: '' })
+  const modalMode = ref<'none' | 'select' | 'add' | 'edit'| 'delete'>('none')
 
   const visibleCities = computed(()=>{
     if (!searchTerm.value.length) return allCities.value.cities
@@ -25,23 +24,49 @@
     const city = allCities.value.cities.find((city: { id: string; name: string})  => city.id === id);
     if (city) {
       activeCity.value = city
-      isModalCityOpen.value = false
+      modalMode.value = "none"
       cityStore.setCity(city);
+      editableCity.value = {name: ''};
     }
   }
 
-  const changeModalCities = (changeContent: boolean) => {
-    isModalCityOpen.value = !isModalCityOpen.value;
-    changeModal.value = changeContent;
+  const addCity = async () => {
+    if (activeCity.value) {
+      const res = await UseCity.addCity({ name: editableCity.value.name })
+      if (res.result) {
+        modalMode.value = "none"
+        allCities.value = await UseCity.getAllCity()
+        cityStore.initCityFromStorage()
+        activeCity.value = city.value;
+        editableCity.value = {name: ''};
+      }
+    }
   }
-  const addCity = () => {
 
+  const updateCity = async () => {
+    if (activeCity.value) {
+      const res = await UseCity.addCity({ name: editableCity.value.name, id: activeCity.value.id })
+      if (res.result) {
+        modalMode.value = "none"
+        allCities.value = await UseCity.getAllCity()
+        cityStore.initCityFromStorage()
+        activeCity.value = city.value;
+        editableCity.value = {name: ''};
+      }
+    }
   }
 
-  const updateCity = () => {
-
+  const deleteCity = async () => {
+    if (activeCity.value) {
+      const res = await UseCity.deleteCity(activeCity.value.id)
+      if (res.result) {
+        modalMode.value = "none"
+        allCities.value = await UseCity.getAllCity()
+        cityStore.initCityFromStorage()
+        activeCity.value = allCities.value.cities[0];
+      }
+    }
   }
-  const modalMode = ref<'none' | 'select' | 'add' | 'edit'| 'delete'>('none')
 
   const openModal = (mode: typeof modalMode.value) => {
     modalMode.value = mode;
@@ -50,14 +75,12 @@
   const closeModal = () => {
     modalMode.value = 'none';
   }
-  const deleteCity = async () => {
-    if (activeCity.value && confirm(`Удалить город "${activeCity.value.name}"?`)) {
-      const res = await UseCity.deleteCity({ id: activeCity.value.id })
-      if (res.result) {
-        changeModalCities(false)
-      }
+
+  watch(modalMode, (mode) => {
+    if (mode === 'edit' && activeCity.value) {
+      editableCity.value.name = activeCity.value.name;
     }
-  }
+  });
 
   onMounted(async () => {
     allCities.value = await UseCity.getAllCity()
@@ -85,75 +108,79 @@
     </button>
   </div>
 
-  <!-- Общая обёртка модалки -->
   <div
     v-if="modalMode !== 'none'"
-    class="modal-store modal-store--active"
+    class="modal-store"
     id="static-modal"
     data-modal-backdrop="static"
     aria-hidden="true"
   >
-    <!-- Модалка выбора города -->
-    <template v-if="modalMode === 'select'">
-      <div class="modal-store__title">Выберите свой город</div>
-      <div class="modal-store__search">
-        <img class="modal-store__search-icon" src="@assets/icons/search.svg" alt="Search" />
-        <input
-          type="search"
-          class="modal-store__search"
-          v-model.trim="searchTerm"
-        />
-        <button
-          v-if="searchTerm"
-          class="clear-button"
-          @click.prevent="searchTerm = ''"
-        >
-          <img
-            class="modal-store__search-clean"
-            src="@assets/icons/x-letter.svg"
-            alt="Clear Input"
+    <div class="modal-header modal-store--active">
+      <template v-if="modalMode === 'select'">
+        <div class="modal-store__title">Выберите свой город</div>
+        <div class="modal-store__search">
+          <img class="modal-store__search-icon" src="@assets/icons/search.svg" alt="Search" />
+          <input
+            type="search"
+            class="modal-store__search"
+            v-model.trim="searchTerm"
           />
-        </button>
-      </div>
-      <div class="modal-store__cities">
-        <div
-          class="modal-store__city"
-          v-for="city in visibleCities"
-          :key="city.id"
-        >
-          <button @click="changeCity(city.id)" class="modal-store__text--hover">
-            {{ city.name }}
+          <button
+            v-if="searchTerm"
+            class="clear-button"
+            @click.prevent="searchTerm = ''"
+          >
+            <img
+              class="modal-store__search-clean"
+              src="@assets/icons/x-letter.svg"
+              alt="Clear Input"
+            />
           </button>
         </div>
+        <div class="modal-store__cities">
+          <div
+            class="modal-store__city"
+            v-for="city in visibleCities"
+            :key="city.id"
+          >
+            <button @click="changeCity(city.id)" class="modal-store__text--hover">
+              {{ city.name }}
+            </button>
+          </div>
+        </div>
+      </template>
+
+      <template v-else-if="modalMode === 'add'">
+        <div class="modal-store__title">Добавить город</div>
+        <input
+          type="text"
+          v-model.trim="editableCity.name"
+          placeholder="Введите название города"
+        />
+        <button @click="addCity">Добавить</button>
+      </template>
+
+      <template v-else-if="modalMode === 'edit'">
+        <div class="modal-store__title">Редактировать город</div>
+        <input
+          type="text"
+          v-model.trim="editableCity.name"
+          :placeholder="activeCity?.name || 'Введите новое название'"
+        />
+        <button @click="updateCity">Обновить</button>
+      </template>
+
+      <template v-else-if="modalMode === 'delete'">
+        <div class="modal-store__title">Удалить город {{activeCity?.name}}?</div>
+        <button @click="deleteCity">Удалить</button>
+        <button @click="closeModal">Отмена</button>
+      </template>
+
+      <div class="modal-store__close cursor-pointer" @click="closeModal">
+        <img class="closeModal" src="@assets/icons/closeWhite.svg" alt="Закрыть" />
       </div>
-    </template>
-
-    <!-- Модалка добавления города -->
-    <template v-else-if="modalMode === 'add'">
-      <div class="modal-store__title">Добавить город</div>
-      <input
-        type="text"
-        v-model.trim="editableCity.name"
-        placeholder="Введите название города"
-      />
-      <button @click="addCity">Добавить</button>
-    </template>
-
-    <!-- Модалка редактирования города -->
-    <template v-else-if="modalMode === 'edit'">
-      <div class="modal-store__title">Редактировать город</div>
-      <input
-        type="text"
-        v-model.trim="editableCity.name"
-        :placeholder="activeCity?.name || 'Введите новое название'"
-      />
-      <button @click="updateCity">Обновить</button>
-    </template>
-
-    <!-- Кнопка закрытия -->
-    <div class="modal-store__close cursor-pointer" @click="closeModal">
-      <img class="closeModal" src="@assets/icons/closeWhite.svg" alt="Закрыть" />
     </div>
+
   </div>
 </template>
 

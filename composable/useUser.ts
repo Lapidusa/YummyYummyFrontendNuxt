@@ -22,7 +22,6 @@ export const useUser = () => {
   }
 
   const updateUser = async (formData: FormData) => {
-    console.log(formData)
     const res = await api.put('/user/update-user/', formData, {
       headers: {
         token: localStorage.getItem('token') || '',
