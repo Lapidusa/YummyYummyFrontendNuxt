@@ -14,7 +14,7 @@ const validateToken = async () => {
   }
 }
 
-onBeforeMount(async ()=>{
+onMounted(async ()=>{
   await validateToken();
   isLoading.value = true
 })

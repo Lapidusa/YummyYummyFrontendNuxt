@@ -3,9 +3,5 @@
 </script>
 
 <template>
-  <Header/>
+  <Header />
 </template>
-
-<style lang="sass">
-
-</style>

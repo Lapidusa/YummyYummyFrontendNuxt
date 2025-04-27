@@ -1,22 +1,9 @@
-// https://nuxt.com/docs/api/configuration/nuxt-config
 import { resolve } from 'path'
-import tsconfigPaths from "vite-tsconfig-paths";
 
 export default defineNuxtConfig({
-
-  compatibilityDate: '2024-11-01',
-
-  devtools: { enabled: true },
-
-  modules: [
-    '@pinia/nuxt',
-    '@nuxtjs/tailwindcss'
-  ],
-
-  css: ['@/assets/styles/main.scss'],
-
   alias: {
     '@': resolve(__dirname, './'),
+    '@lib': resolve(__dirname, 'lib'),
     '@assets': resolve(__dirname, 'assets'),
     '@fonts': resolve(__dirname, 'assets/fonts'),
     '@icons': resolve(__dirname, 'assets/icons'),
@@ -27,12 +14,24 @@ export default defineNuxtConfig({
     '@interfaces': resolve(__dirname, 'interfaces'),
   },
 
+  modules: [
+    '@pinia/nuxt',
+    '@nuxtjs/tailwindcss',
+  ],
+
+  typescript: {
+    strict: true,
+    shim: false,
+  },
+
+  devtools: { enabled: true },
+  css: ['@/assets/styles/main.scss'],
+
   runtimeConfig: {
     public: {
-      serverUrl: process.env.SERVER_URL
+      serverUrl: process.env.SERVER_URL,
+      mapAPI: process.env.API_KEY_YANDEX,
     }
   },
-  vite: {
-    plugins: [tsconfigPaths()]
-  }
+  compatibilityDate: '2025-04-27',
 })

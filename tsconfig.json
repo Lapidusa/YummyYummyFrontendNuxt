@@ -5,9 +5,15 @@
     "target": "ESNext",
     "module": "ESNext",
     "moduleResolution": "Node",
+    "esModuleInterop": true,
     "baseUrl": ".",
+    "types": ["@yandex/ymaps3-types", "@types/node"],
     "paths": {
+      "#app": ["./.nuxt/app"],
+      "#imports": ["./.nuxt/imports"],
+      "ymaps3": ["./node_modules/@yandex/ymaps3-types"],
       "@/*": ["./*"],
+      "@lib/*": ["./lib/*"],
       "@fonts/*": ["./assets/fonts/*"],
       "@assets/*": ["./assets/*"],
       "@icons/*": ["./assets/icons/*"],
@@ -17,6 +23,6 @@
       "@composable/*": ["./composable/*"],
       "@interfaces/*": ["./interfaces/*"]
     },
-    "types": ["@types/node"]
-  }
+  },
+  "exclude": ["node_modules", "dist"]
 }

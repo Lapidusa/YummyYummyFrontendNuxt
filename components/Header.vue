@@ -351,5 +351,5 @@
   border: 2px solid #ccc
   border-radius: 5px
   outline: none
-
+  padding: 0
 </style>
