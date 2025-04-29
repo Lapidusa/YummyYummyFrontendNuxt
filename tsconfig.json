@@ -7,11 +7,10 @@
     "moduleResolution": "Node",
     "esModuleInterop": true,
     "baseUrl": ".",
-    "types": ["@yandex/ymaps3-types", "@types/node"],
+    "types": ["leaflet", "leaflet-draw"],
     "paths": {
       "#app": ["./.nuxt/app"],
       "#imports": ["./.nuxt/imports"],
-      "ymaps3": ["./node_modules/@yandex/ymaps3-types"],
       "@/*": ["./*"],
       "@lib/*": ["./lib/*"],
       "@fonts/*": ["./assets/fonts/*"],
@@ -22,7 +21,7 @@
       "@store/*": ["./store/*"],
       "@composable/*": ["./composable/*"],
       "@interfaces/*": ["./interfaces/*"]
-    },
+    }
   },
-  "exclude": ["node_modules", "dist"]
+  "exclude": ["node_modules", "dist"],
 }

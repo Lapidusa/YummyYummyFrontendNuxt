@@ -21,6 +21,7 @@
   "devDependencies": {
     "@nuxtjs/tailwindcss": "^6.13.2",
     "@pinia/nuxt": "^0.11.0",
+    "@types/leaflet": "^1.9.17",
     "@types/node": "^22.14.1",
     "sass-embedded": "^1.86.3",
     "vite-tsconfig-paths": "^5.1.4"

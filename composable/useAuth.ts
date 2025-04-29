@@ -14,5 +14,11 @@ export const useAuth = () => {
     return response.data
   }
 
-  return {sendSms, verifyCode}
+  const getToken = () => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('token');
+    }
+    return null;
+  };
+  return {sendSms, verifyCode, getToken}
 }
