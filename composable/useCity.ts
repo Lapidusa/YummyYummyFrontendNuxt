@@ -1,12 +1,18 @@
 import {useApi} from "@composable/api";
 import type {City} from "@interfaces/city";
 import {useAuth} from "@composable/useAuth"
+
 export const useCity = ()  =>{
   const api = useApi();
   const Auth = useAuth();
 
   const getAllCity = async () =>{
     const res = await api.get('/city/all-cities/');
+    return res.data;
+  }
+
+  const getCityById = async (storeId: string) =>{
+    const res = await api.get(`/city/${storeId}`);
     return res.data;
   }
 
@@ -31,5 +37,5 @@ export const useCity = ()  =>{
     return res.data;
   }
 
-  return {getAllCity, addCity, updateCity, deleteCity};
+  return {getAllCity, getCityById, addCity, updateCity, deleteCity};
 }

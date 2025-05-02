@@ -10,6 +10,6 @@ export interface Store {
   city_id: string;
   created_at: Date;
   updated_at: Date;
-  area:number[][];
+  area:[number, number][];
   point:[number, number];
 }

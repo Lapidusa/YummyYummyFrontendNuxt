@@ -1,14 +1,13 @@
 import {useApi} from "@composable/api";
-import type {City} from "@interfaces/city";
 import {useAuth} from "@composable/useAuth";
 import type {Store} from "@interfaces/store";
 
-export const useCity = ()  => {
+export const useStore = ()  => {
   const api = useApi();
   const Auth = useAuth();
 
   const getStoresByCityId = async (cityId: string) => {
-    const res = await api.get(`/store/${cityId}`);
+    const res = await api.get(`/store/stores-by-city/${cityId}`);
     return res.data;
   }
 

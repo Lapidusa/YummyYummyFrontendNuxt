@@ -2,15 +2,23 @@
   import {useCityStore} from "@store/city";
   import type {City} from "@interfaces/city";
   import {useCity} from "@composable/useCity";
-  const cityStore = useCityStore()
+  import {useStore} from "@composable/useStore";
+  import type {Store} from "@interfaces/store";
+
   const UseCity = useCity()
+  const UseStore = useStore()
+  const cityStore = useCityStore()
   const city = computed(() => cityStore.city)
+
   const allCities = ref<{ cities: City[] }>({ cities: [] })
-  const searchTerm = ref<string>('');
   const activeCity = ref<City | null>(null)
+  const storesByCity = ref<Store[]>([])
   const editableCity = ref<Partial<City>>({ name: '' })
-  const modalModeCity = ref<'none' | 'select' | 'add' | 'edit'| 'delete'>('none')
+
   const error = ref<string>('')
+  const searchTerm = ref<string>('');
+
+  const modalModeCity = ref<'none' | 'select' | 'add' | 'edit'| 'delete'>('none')
 
   const visibleCities = computed(()=>{
     if (!searchTerm.value.length) return allCities.value.cities
@@ -21,7 +29,7 @@
     ));
   });
 
-  const changeCity = (id: string) => {
+  const changeCity = async (id: string) => {
     const city = allCities.value.cities.find((city: { id: string; name: string})  => city.id === id);
     if (city) {
       activeCity.value = city
@@ -29,10 +37,15 @@
       cityStore.setCity(city);
       error.value = '';
       editableCity.value = {name: ''};
-      //загрузить все магазины внутри города
+      await getStores(activeCity.value.id);
     }
   }
-
+  const getStores = async (data: string) => {
+    const res = await UseStore.getStoresByCityId(data);
+    if (res.result) {
+      storesByCity.value = res.stores
+    }
+  }
   const addCity = async () => {
     if (activeCity.value) {
       const res = await UseCity.addCity({ name: editableCity.value.name });
@@ -93,31 +106,43 @@
     allCities.value = await UseCity.getAllCity()
     cityStore.initCityFromStorage()
     activeCity.value = city.value;
-    if(activeCity.value) {
-
+    if (activeCity.value) {
+      await getStores(activeCity.value.id);
     }
   })
 </script>
 
 <template>
-  <div class="city">
-    <button class="city__btn" @click="openModal('select')">
-      {{ activeCity?.name }}
-    </button>
+  <div class="stores">
+    <div class="city">
+      <button class="city__btn" @click="openModal('select')">
+        {{ activeCity?.name }}
+      </button>
 
-    <button class="city__btn city__btn--add" @click="openModal('add')">
-      <img src="@assets/icons/plus.svg" alt="add" />
-    </button>
+      <button class="city__btn city__btn--add" @click="openModal('add')">
+        <img src="@assets/icons/plus.svg" alt="add" />
+      </button>
 
-    <button class="city__btn city__btn--update" @click="openModal('edit')">
-      <img src="@assets/icons/update.svg" alt="update" />
-    </button>
+      <button class="city__btn city__btn--update" @click="openModal('edit')">
+        <img src="@assets/icons/update.svg" alt="update" />
+      </button>
 
-    <button class="city__btn city__btn--delete" @click="openModal('delete')">
-      <img src="@assets/icons/delete.svg" alt="delete" />
-    </button>
+      <button class="city__btn city__btn--delete" @click="openModal('delete')">
+        <img src="@assets/icons/delete.svg" alt="delete" />
+      </button>
+    </div>
+
+    <div class="store">
+      <NuxtLink v-if="activeCity" :to="`/admin/cities/${activeCity.id}/stores`" class="store__btn--gradient">
+        Магазины
+      </NuxtLink>
+    </div>
   </div>
-  <Map  v-if="activeCity" :edit="false" :coords="[activeCity?.point[1], activeCity?.point[0]]" :zoom="10"/>
+
+  <MapVisible v-if="activeCity"
+        :coords="[activeCity?.point[1], activeCity?.point[0]]"
+        :zoom="10"
+        :store-items="storesByCity"/>
   <div
     v-if="modalModeCity !== 'none'"
     class="modal-city"
@@ -188,9 +213,11 @@
 
         <template v-else-if="modalModeCity === 'delete'">
           <div class="modal-city__title">Удалить город {{activeCity?.name}}?</div>
-          <button @click="deleteCity" class="modal-city__button--gradient">Удалить</button>
           <p class="text-red" v-if="error">{{error}}</p>
-          <button @click="closeModal" class="modal-city__button--outline">Отмена</button>
+          <div class="modal-city__button">
+            <button @click="deleteCity" class="modal-city__button--gradient">Удалить</button>
+            <button @click="closeModal" class="modal-city__button--outline">Отмена</button>
+          </div>
         </template>
       </div>
     </div>
@@ -200,7 +227,7 @@
 <style scoped lang="sass">
 @use '@assets/styles/mixins' as *
 .city
-  @apply flex items-center gap-3 pb-5
+  @apply flex items-center gap-3
   &__btn
     @apply font-bold hover:text-orange duration-300 ease-in
     &:nth-child(n+2)
@@ -214,16 +241,23 @@
   &--active
     @apply bg-white rounded-3xl -translate-y-2/4 -translate-x-1/2 absolute top-1/2 left-1/2 shadow-lg p-6 w-fit h-fit z-50
   &__button
+    @apply flex gap-2
     &--gradient
+      @apply flex-1
       @include button-orange-gradient
     &--outline
       @include button-orange-outline
+      @apply flex-1
   &__search
     @apply relative
     &-icon
       @apply absolute top-1/4 left-2 z-10
     &-clean
       @apply absolute top-1/4 right-2 z-10 fill-orange
+.store
+  @include button-orange-gradient
+  &s
+    @apply flex justify-between items-center pb-5
 .closeModal
   @apply absolute top-1 -right-10;
 
