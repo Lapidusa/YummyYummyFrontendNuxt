@@ -28,7 +28,6 @@
 
 
   function renderStoreItems(data: Store[] | Store | undefined) {
-    console.log('data', data)
     if (!map.value || !data) return
 
     drawnItems.clearLayers()
@@ -85,3 +84,4 @@
   z-index: 10 !important
 
 </style>
+

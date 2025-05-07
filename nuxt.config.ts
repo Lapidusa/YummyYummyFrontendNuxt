@@ -1,6 +1,7 @@
 import { resolve } from 'path'
 
 export default defineNuxtConfig({
+  ssr: true,
   alias: {
     '@': resolve(__dirname, './'),
     '@lib': resolve(__dirname, 'lib'),
@@ -25,7 +26,9 @@ export default defineNuxtConfig({
   },
 
   devtools: { enabled: true },
-  css: ['@/assets/styles/main.scss'],
+  css: ['@/assets/styles/main.scss',
+    'leaflet/dist/leaflet.css',
+    'leaflet-draw/dist/leaflet.draw.css',],
 
   runtimeConfig: {
     public: {

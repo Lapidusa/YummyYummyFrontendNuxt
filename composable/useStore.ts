@@ -7,21 +7,21 @@ export const useStore = ()  => {
   const Auth = useAuth();
 
   const getStoresByCityId = async (cityId: string) => {
-    const res = await api.get(`/store/stores-by-city/${cityId}`);
+    const res = await api.get(`/store/get-stores-by-city/${cityId}`);
     return res.data;
   }
 
   const addStore = async (store: Store) => {
     const token = Auth.getToken();
     if (!token && store) return
-    const res = await api.post('/store/',store, {headers: {token}});
+    const res = await api.post('/store/create-store/',store, {headers: {token}});
     return res.data;
   }
 
   const updateStore = async (store: Store) =>{
     const token = Auth.getToken();
     if (!token && store) return
-    const res = await api.put('/store/',store, {headers: {token}});
+    const res = await api.put(`/store/${store.id}`,store, {headers: {token}});
     return res.data;
   }
 
