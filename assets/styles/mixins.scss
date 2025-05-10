@@ -24,3 +24,6 @@
   }
 }
 
+@mixin text-hover{
+  @apply duration-300 cursor-pointer hover:text-orange;
+}

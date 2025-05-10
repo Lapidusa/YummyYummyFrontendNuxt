@@ -3,105 +3,139 @@
   import 'leaflet-draw'
   import { onMounted } from 'vue'
   import type {Store} from "@interfaces/store";
+  import type {City} from "@interfaces/city";
 
   const props = defineProps<{
-    coords: [number, number]
+    city: City
     zoom: number
-    storeItems?: Store[] | Store
+    displayStores?: Store[]
+    editableStore?: Store | null
+  }>()
+  const emit = defineEmits<{
+    (e: 'update:storeItems', value: Partial<Store[]>): void
   }>()
 
   const map = ref<L.Map>()
-  const emit = defineEmits<{
-      (e: 'update:storeItems', value: Partial<Store[]>): void
-    }>()
+
+  const drawControl = ref<L.Control.Draw>()
+
   const drawnItems = new L.FeatureGroup()
+
+  const drawnDisplayItems = new L.FeatureGroup()
+  const drawnEditableItems = new L.FeatureGroup()
+
   function emitUpdate(stores: Store[]) {
     emit('update:storeItems', structuredClone(stores))
   }
 
-  watch(() => props.storeItems, () => {
-    renderStoreItems(props.storeItems)
-  }, { deep: true, immediate: true })
+  watch(() => props.displayStores, renderStoreItems, { deep: true, immediate: true })
+  watch(() => props.editableStore, renderStoreItems, { deep: true, immediate: true })
 
-  function renderStoreItems(data: Store[] | Store | undefined) {
-    if (!map.value || !data) return
+  const pizzaIcon = L.icon({
+        iconUrl: '/icons/pizza.svg', // путь к файлу
+        iconSize: [30, 40],               // размер иконки
+        iconAnchor: [15, 40],             // точка "основания" маркера
+        popupAnchor: [0, -40],            // отступ попапа
+      })
 
-    const stores = Array.isArray(data) ? data : [data]
+  function renderStoreItems() {
+    if (!map.value) return
 
-    drawnItems.eachLayer((layer: any) => {
-      if ((layer as any).editing && (layer as any).editing.enabled()) {
-        (layer as any).editing.disable()
-      }
-    })
+    drawnDisplayItems.clearLayers()
+    drawnEditableItems.clearLayers()
 
-    drawnItems.clearLayers()
-
-    for (const store of stores) {
-      if (!store || !store.point || store.point.length !== 2) continue;
-
+    // Только отображаемые магазины
+    for (const store of props.displayStores || []) {
+      if (!store.point || store.point.length !== 2) continue
       const [lat, lng] = store.point.map(Number)
 
-      if (typeof lat !== 'number' || typeof lng !== 'number') continue;
+      const popupContent = `
+        <div>
+          <strong>${store.address}</strong>
+          <p style="margin: 0">+${store.phone_number}</p>
+          <button class="goto-store" data-id="${store.id}" style="color:orange;text-decoration:underline;background:none;border:none;padding:0;margin-top:4px;cursor:pointer;">
+            Перейти к магазину
+          </button>
+        </div>
+      `
 
-      const marker = L.marker([lat, lng], { draggable: true })
-       marker.on('moveend', () => {
-         if (map.value && map.value.hasLayer(marker)) {
-           const updatedLatLng = marker.getLatLng()
-           store.point = [updatedLatLng.lat, updatedLatLng.lng]
-           emitUpdate([store])
-        }
+      const marker = L.marker([lat, lng], {
+        draggable: false,
+        icon: pizzaIcon
       })
-      drawnItems.addLayer(marker);
+      marker.bindPopup(popupContent)
+      drawnDisplayItems.addLayer(marker)
 
       if (Array.isArray(store.area) && store.area.length) {
         const polygon = L.polygon(store.area.map(p => [p[0], p[1]]), {
-          color: 'blue',
-          fillOpacity: 0.2
-        });
-        polygon.on('edit', () => {
-          const latlngs = polygon.getLatLngs() as L.LatLng[][]
-          store.area = latlngs[0].map(p => [p.lat, p.lng])
-          emitUpdate([store])
+          color: '#888',
+          fillOpacity: 0.1,
         })
-        drawnItems.addLayer(polygon);
+        polygon.bindPopup(popupContent)
+        drawnDisplayItems.addLayer(polygon)
       }
+    }
+
+    // Редактируемый магазин
+    const store = props.editableStore
+    if (store && store.point && store.point.length === 2) {
+      const [lat, lng] = store.point.map(Number)
+
+      const marker = L.marker([lat, lng], {
+        draggable: false,
+        icon: pizzaIcon
+      })
+      marker.on('moveend', () => {
+        const latlng = marker.getLatLng()
+        store.point = [latlng.lat, latlng.lng]
+        emitUpdate([store])
+      })
+      drawnEditableItems.addLayer(marker)
+    }
+
+    if (store && Array.isArray(store.area) && store.area.length) {
+      const polygon = L.polygon(store.area.map(p => [p[0], p[1]]), {
+        color: 'orange',
+        fillOpacity: 0.3,
+      })
+      polygon.on('edit', () => {
+        const latlngs = polygon.getLatLngs() as L.LatLng[][]
+        store.area = latlngs[0].map(p => [p.lat, p.lng])
+        emitUpdate([store])
+      })
+      drawnEditableItems.addLayer(polygon)
     }
   }
 
+
   onMounted(() => {
-    const m = L.map('map').setView(props.coords, props.zoom)
+    const m = L.map('map', { attributionControl:false }).setView([props.city.point[1],props.city.point[0]], props.zoom)
     map.value = m
+
+    map.value!.on('popupopen', function (e: any) {
+      const button = e.popup.getElement().querySelector('.goto-store') as HTMLButtonElement
+      if (button) {
+        button.addEventListener('click', () => {
+          const id = button.getAttribute('data-id')
+          if (id) {
+            navigateTo(`/admin/cities/${props.city.id}/stores/${id}`)
+          }
+        })
+      }
+    })
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '© OpenStreetMap',
     }).addTo(m)
 
-    m.addLayer(drawnItems)
-
-    const drawControl = new L.Control.Draw({
-      edit: {
-        featureGroup: drawnItems,
-        poly: {
-          allowIntersection: false,
-        },
-      } as any,
-      draw: {
-        polygon: true,
-        marker: true,
-        circle: false,
-        rectangle: false,
-        polyline: false,
-        circlemarker: false,
-      } as any,
-    })
-
-    m.addControl(drawControl)
+    m.addLayer(drawnDisplayItems)
+    m.addLayer(drawnEditableItems)
 
     m.on(L.Draw.Event.CREATED, function (event: any) {
       let hasMarker = false
       let hasPolygon = false
 
-      drawnItems.eachLayer(layer => {
+      drawnEditableItems.eachLayer(layer => {
         if (layer instanceof L.Marker) hasMarker = true
         if (layer instanceof L.Polygon) hasPolygon = true
       })
@@ -113,8 +147,8 @@
         alert('Можно добавить только 1 маркер и 1 полигон')
         return
       }
-      drawnItems.addLayer(event.layer)
-      const store = Array.isArray(props.storeItems) ? props.storeItems[0] : props.storeItems
+      drawnEditableItems.addLayer(event.layer)
+      const store = props.editableStore
       if (!store) return
 
       if (isMarker) {
@@ -128,7 +162,7 @@
       emitUpdate([store])
     })
     m.on(L.Draw.Event.DELETED, function (event: any) {
-    const store = Array.isArray(props.storeItems) ? props.storeItems[0] : props.storeItems
+    const store = props.editableStore
     if (!store) return
 
     event.layers.eachLayer((layer: any) => {
@@ -142,7 +176,25 @@
     emitUpdate([store])
   })
 
-    renderStoreItems(props.storeItems)
+    renderStoreItems()
+    if (drawControl.value) {
+      map.value?.removeControl(drawControl.value)
+    }
+    drawControl.value = new L.Control.Draw({
+      edit: {
+        featureGroup: drawnEditableItems,
+      },
+      draw: {
+        polygon: {},
+        marker: {},
+        circle: false,
+        rectangle: false,
+        polyline: false,
+        circlemarker: false,
+      },
+    })
+    map.value?.addControl(drawControl.value)
+
   })
 
 </script>

@@ -7,11 +7,27 @@ export interface CategoryRequest {
 
 export interface Category extends CategoryRequest {
   id: string
-  position: number
 }
 
 export enum TypeCategory {
-  GROUP = "group",
-  PIZZA = "pizza",
-  CONSTRUCTOR = "constructor"
+  GROUP = 0,
+  PIZZA = 1,
+  CONSTRUCTOR = 2
 }
+
+export interface SwapDataCategory {
+  first_category: string
+  second_category: string
+}
+
+export const CategoryFieldLabels: Record<string, string> = {
+  name: 'Название',
+  store_id: 'Магазин',
+};
+
+export const createEmptyCategoryRequest = (): CategoryRequest => ({
+  name: '',
+  store_id:'',
+  is_available: true,
+  type: TypeCategory.GROUP,
+})

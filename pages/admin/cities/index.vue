@@ -1,9 +1,14 @@
 <script setup lang="ts">
   import {useCityStore} from "@store/city";
-  import type {City} from "@interfaces/city";
+  import {type City, CityFieldLabels} from "@interfaces/city";
   import {useCity} from "@composable/useCity";
   import {useStore} from "@composable/useStore";
   import type {Store} from "@interfaces/store";
+  import {validateEmptyFieldsByLabels} from "@/utils/validators";
+
+  const MapVisible = defineAsyncComponent(() =>
+    process.client ? import('@components/MapVisible.vue') : Promise.resolve({})
+  )
 
   const UseCity = useCity()
   const UseStore = useStore()
@@ -11,7 +16,7 @@
   const city = computed(() => cityStore.city)
 
   const allCities = ref<{ cities: City[] }>({ cities: [] })
-  const activeCity = ref<City | null>(null)
+  const activeCity = ref<City | null>()
   const storesByCity = ref<Store[]>([])
   const editableCity = ref<Partial<City>>({ name: '' })
 
@@ -31,6 +36,7 @@
 
   const changeCity = async (id: string) => {
     const city = allCities.value.cities.find((city: { id: string; name: string})  => city.id === id);
+
     if (city) {
       activeCity.value = city
       modalModeCity.value = "none"
@@ -40,38 +46,50 @@
       await getStores(activeCity.value.id);
     }
   }
+
   const getStores = async (data: string) => {
     const res = await UseStore.getStoresByCityId(data);
     if (res.result) {
       storesByCity.value = res.stores
     }
   }
-  const addCity = async () => {
-    if (activeCity.value) {
-      const res = await UseCity.addCity({ name: editableCity.value.name });
-      if (res.result) {
-        modalModeCity.value = "none";
-        allCities.value = await UseCity.getAllCity();
-        cityStore.initCityFromStorage();
-        activeCity.value = city.value;
-        editableCity.value = {name: ''};
-        error.value = '';
-      } else error.value = res.message;
+
+  function validateAndSetError(): boolean {
+    const errorMessage = validateEmptyFieldsByLabels(editableCity.value, CityFieldLabels)
+    if (errorMessage) {
+      error.value = errorMessage
+      return false
     }
+    error.value = ''
+    return true
+  }
+
+  const addCity = async () => {
+    if (!validateAndSetError()) return
+
+    const res = await UseCity.addCity({ name: editableCity.value.name });
+    if (res.result) {
+      modalModeCity.value = "none";
+      allCities.value = await UseCity.getAllCity();
+      cityStore.initCityFromStorage();
+      activeCity.value = city.value;
+      editableCity.value = {name: ''};
+      error.value = '';
+    } else error.value = res.message;
   }
 
   const updateCity = async () => {
-    if (activeCity.value) {
-      const res = await UseCity.addCity({ name: editableCity.value.name, id: activeCity.value.id })
-      if (res.result) {
-        modalModeCity.value = "none"
-        allCities.value = await UseCity.getAllCity()
-        cityStore.initCityFromStorage()
-        activeCity.value = city.value;
-        editableCity.value = {name: ''};
-        error.value = '';
-      } else error.value = res.message;
-    }
+    if (!validateAndSetError()) return
+
+    const res = await UseCity.addCity({ name: editableCity.value.name, id: activeCity.value?.id })
+    if (res.result) {
+      modalModeCity.value = "none"
+      allCities.value = await UseCity.getAllCity()
+      cityStore.initCityFromStorage()
+      activeCity.value = city.value;
+      editableCity.value = {name: ''};
+      error.value = '';
+    } else error.value = res.message;
   }
 
   const deleteCity = async () => {
@@ -140,7 +158,7 @@
   </div>
 
   <MapVisible v-if="activeCity"
-        :coords="[activeCity?.point[1], activeCity?.point[0]]"
+        :city="activeCity"
         :zoom="10"
         :store-items="storesByCity"/>
   <div

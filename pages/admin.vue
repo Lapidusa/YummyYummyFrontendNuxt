@@ -9,7 +9,7 @@ const router = useRouter()
 
 const validateToken = async () => {
   const res = await UseUser.fetchUser();
-  if (res.result && res.role !== 4){
+  if (res.result && res.user.role !== 4){
     await router.push('/')
   }
 }

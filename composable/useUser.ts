@@ -14,7 +14,7 @@ export const useUser = () => {
       })
       if (res.data.result) {
         userStore.setUser(res.data.user)
-        return res.data.user
+        return res.data
       }
     } catch (error) {
       console.error('Ошибка при получении пользователя:', error)

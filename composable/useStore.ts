@@ -11,6 +11,11 @@ export const useStore = ()  => {
     return res.data;
   }
 
+  const getAllStores = async () => {
+    const res = await api.get(`/store/all-stores/`);
+    return res.data;
+  }
+
   const addStore = async (store: Store) => {
     const token = Auth.getToken();
     if (!token && store) return
@@ -32,5 +37,5 @@ export const useStore = ()  => {
     return res.data;
   }
 
-  return {getStoresByCityId, addStore, updateStore, deleteStore}
+  return {getStoresByCityId, getAllStores, addStore, updateStore, deleteStore}
 }

@@ -5,43 +5,75 @@
 
   import {useStore} from "@composable/useStore";
   import {useCity} from "@composable/useCity";
-  import {createEmptyStore, type Store} from "@interfaces/store";
+  import {createEmptyStore, type Store, StoreFieldLabels} from "@interfaces/store";
+  import {validateEmptyFieldsByLabels} from "@/utils/validators";
+  import type {City} from "@interfaces/city";
 
   const MapEditable = defineAsyncComponent(() =>
     process.client ? import('@components/MapEditable.vue') : Promise.resolve({})
   )
+  const MapVisible = defineAsyncComponent(() =>
+    process.client ? import('@components/MapVisible.vue') : Promise.resolve({})
+  )
+
   const route = useRoute();
   const UseStore = useStore();
   const UseCity = useCity();
-  const cityId = route.params.id;
+  const cityId = computed(() => route.params.cityId as string)
   const cityCoords = ref<[number, number]>([0, 0])
+  const city = ref<City>({
+    id: '',
+    name:'',
+    point:[0,0]
+  })
   const error = ref<string>('')
-  const modalModeStore = ref<'none'| 'view' | 'add' | 'update'| 'delete'>('none')
+  const modalMode = ref<'none'| 'view' | 'add' | 'update'| 'delete'>('none')
   const visibleStores = ref<Store[]>([]);
 
   const newStore = reactive(createEmptyStore());
   const newStoreCopy = computed(() => cloneDeep(newStore));
   const emptyStore = createEmptyStore();
 
+  function validateAndSetError(): boolean {
+    const errorMessage = validateEmptyFieldsByLabels(newStore, StoreFieldLabels)
+    if (errorMessage) {
+      error.value = errorMessage
+      return false
+    }
+    error.value = ''
+    return true
+  }
+
+  const removeStoreById = (id: string): Store[] => {
+    return visibleStores.value.filter(store => store.id !== id);
+  };
+
   const getActiveCity = async () => {
-    const res = await UseStore.getStoresByCityId(cityId.toString() as string);
+    const res = await UseStore.getStoresByCityId(cityId.value.toString() as string);
     visibleStores.value = res.stores;
   }
+
   const addStore = async () => {
+    if (!validateAndSetError()) return
+
     const res = await UseStore.addStore(newStore);
+
     if (res.result){
       await getActiveCity()
-      modalModeStore.value = 'none'
+      modalMode.value = 'none'
       Object.assign(newStore, emptyStore);
     } else {
       error.value = res.message;
     }
   }
   const updateStore = async () => {
+    if (!validateAndSetError()) return
+
     const res = await UseStore.updateStore(newStore);
+
     if (res.result){
       await getActiveCity()
-      modalModeStore.value = 'none'
+      modalMode.value = 'none'
     } else {
       error.value = res.message;
     }
@@ -49,41 +81,40 @@
 
   const deleteStore = async () => {
     const res = await UseStore.deleteStore(newStore.id);
+
     if (res.result){
       await getActiveCity()
-      modalModeStore.value = 'none'
+      modalMode.value = 'none'
     } else {
       error.value = res.message;
     }
   }
 
   function onStoreUpdate(updated: Store[]) {
-    console.log("sasdasd", updated)
     newStore.point = updated[0].point
     newStore.area = updated[0].area
-    console.log("AWD", newStore)
-
   }
-  const openModal = async (mode: typeof modalModeStore.value, store?: Store) => {
-    modalModeStore.value = mode;
-    if (mode === 'add') {
-      const res = await UseCity.getCityById(cityId.toString() as string);
-      cityCoords.value = res.city.point;
-    }
+
+  const openModal = async (mode: typeof modalMode.value, store?: Store) => {
+    modalMode.value = mode;
+
     if (store) {
       Object.assign(newStore, store);
-      await getActiveCity();
     } else {
       Object.assign(newStore, emptyStore);
-      newStore.city_id = cityId.toString();
+      newStore.city_id = cityId.value.toString();
     }
   }
+
   const closeModal = () => {
-    modalModeStore.value = 'none';
+    modalMode.value = 'none';
     error.value = '';
   }
+
   onMounted(async ()=>{
     await getActiveCity()
+    const res = await UseCity.getCityById(cityId.value.toString() as string);
+    city.value = res.city;
   })
 </script>
 
@@ -91,43 +122,44 @@
   <div class="stores">
     <button class="stores__btn--gradient" @click="openModal('add')">Создать магазин</button>
     <div class="stores__container">
-      <NuxtLink :to="`/admin/cities/${cityId}/stores/${store.id}`" class="store" v-for="store in visibleStores" :key="store.id">
-      <div class="store__data">
-        <div class="store__address"><b>Адрес:</b> {{store.address}}</div>
-        <div class="store__working"><b>Часы работы:</b> {{store.start_working_hours}} - {{store.end_working_hours}}</div>
-        <div class="store__delivery"><b>Время доставки:</b> {{store.start_delivery_time}} - {{store.end_delivery_time}}</div>
-        <div class="store__price"><b>Минимальная сумма заказа:</b> {{store.min_order_price}}</div>
-        <div class="store__phone"><b>Телефон:</b> +{{store.phone_number}}</div>
+      <div class="store" v-for="store in visibleStores" :key="store.id">
+        <NuxtLink :to="`/admin/cities/${cityId}/stores/${store.id}`" class="store__data">
+          <div class="store__address"><b>Адрес:</b> {{store.address}}</div>
+          <div class="store__working"><b>Часы работы:</b> {{store.start_working_hours}} - {{store.end_working_hours}}</div>
+          <div class="store__delivery"><b>Время доставки:</b> {{store.start_delivery_time}} - {{store.end_delivery_time}}</div>
+          <div class="store__price"><b>Минимальная сумма заказа:</b> {{store.min_order_price}}</div>
+          <div class="store__phone"><b>Телефон:</b> +{{store.phone_number}}</div>
+        </NuxtLink>
+        <div class="store__actions">
+          <button @click="openModal('view', store)"><img src="@assets/icons/eye.svg" alt="Посмотреть"></button>
+          <button @click="openModal('update', store)"><img src="@assets/icons/update.svg" alt="Редактировать"></button>
+          <button @click="openModal('delete', store)"><img src="@assets/icons/delete.svg" alt="Удалить"></button>
+        </div>
       </div>
-      <div class="store__actions" @click.stop>
-        <button @click="openModal('view', store)"><img src="@assets/icons/eye.svg" alt="Посмотреть"></button>
-        <button @click="openModal('update', store)"><img src="@assets/icons/update.svg" alt="Редактировать"></button>
-        <button @click="openModal('delete', store)"><img src="@assets/icons/delete.svg" alt="Удалить"></button>
-      </div>
-    </NuxtLink>
     </div>
   </div>
   <div
-    v-if="modalModeStore !== 'none'"
+    v-if="modalMode !== 'none'"
     class="modal-store"
-    id="static-modal"
     data-modal-backdrop="static">
-    <div class="modal-store modal-store--active">
+    <div class="modal-store modal-store--active"
+    :class="{'modal-store--small': modalMode === 'delete'}">
+
       <div class="modal-store__close cursor-pointer" @click="closeModal">
         <img class="closeModal" src="@assets/icons/closeWhite.svg" alt="Закрыть" />
       </div>
       <div class="modal-store__container">
-        <template v-if="modalModeStore === 'view'">
+        <template v-if="modalMode === 'view'">
           <div class="modal-store__content">
             <MapVisible v-if="newStoreCopy"
-              :coords="[newStoreCopy.point[0], newStoreCopy.point[1]]" :key="newStoreCopy.id"
+              :city="city" :key="newStoreCopy.id"
               :zoom="12" :store-items="[toRaw(newStoreCopy)]"/>
           </div>
         </template>
-        <template v-if="modalModeStore === 'add' || modalModeStore === 'update'">
+        <template v-if="modalMode === 'add' || modalMode === 'update'">
           <div class="modal-store__form-scroll">
             <div class="modal-store__title">
-              {{ modalModeStore === 'add' ? 'Добавить магазин' : 'Редактировать магазин' }}
+              {{ modalMode === 'add' ? 'Добавить магазин' : 'Редактировать магазин' }}
             </div>
             <input v-model="newStore.address" type="text" placeholder="Адрес" />
             <div class="modal-store__working">
@@ -151,24 +183,28 @@
               <input class="w-auto" v-model.number="newStore.min_order_price" type="number" placeholder="Мин. сумма заказа" />
             </div>
             <MapEditable
-              :coords="modalModeStore === 'add' ? [cityCoords[1], cityCoords[0]] : [newStoreCopy.point[0], newStoreCopy.point[1]]"
+              :city="city"
               :key="newStoreCopy.id"
               :zoom="12"
               class="modal-store__map"
-              :store-items="modalModeStore === 'add' ? [toRaw(emptyStore)] : [toRaw(newStoreCopy)]"
+              :editable-store="modalMode === 'add' ? emptyStore : newStoreCopy"
+
+              :displayStores="modalMode === 'add' ? visibleStores : removeStoreById(newStoreCopy.id)"
               @update:storeItems="onStoreUpdate"
             />
+<!--              :display-store = ''-->
+
             <p class="text-red" v-if="error">{{ error }}</p>
             <button
               class="modal-store__button--gradient"
-              @click="modalModeStore === 'add' ? addStore() : updateStore()"
+              @click="modalMode === 'add' ? addStore() : updateStore()"
             >
-              {{ modalModeStore === 'add' ? 'Добавить' : 'Обновить' }}
+              {{ modalMode === 'add' ? 'Добавить' : 'Обновить' }}
             </button>
           </div>
         </template>
 
-        <template v-if="modalModeStore === 'delete'">
+        <template v-if="modalMode === 'delete'">
           <div class="modal-store__title">Удалить магазин {{ newStore.address }}?</div>
           <p class="text-red" v-if="error">{{ error }}</p>
           <div class="flex gap-3">
@@ -204,7 +240,6 @@
   @apply fixed inset-0 bg-black bg-opacity-70 z-[1000]
   &__form-scroll
     @apply flex flex-col gap-4 overflow-y-auto pr-2
-    max-height: 100%
   &__map
     @apply flex-1 h-full
   &__title
@@ -213,7 +248,11 @@
     @apply flex flex-col gap-4 flex-1 overflow-hidden h-full
   &--active
     @apply bg-white rounded-3xl -translate-y-2/4 -translate-x-1/2 absolute
-    @apply flex flex-col top-1/2 left-1/2 shadow-lg p-6 z-50 w-[90vw] h-[90vh]
+    @apply flex flex-col top-1/2 left-1/2 shadow-lg p-6 z-50
+    width: calc(100% - 100px)
+    height: calc(100% - 100px)
+  &--small
+    @apply w-fit h-fit
   &__content
     @apply flex flex-col overflow-hidden flex-auto overflow-y-auto
   &__working, &__delivery
