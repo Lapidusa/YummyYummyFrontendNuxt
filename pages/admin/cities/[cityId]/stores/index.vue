@@ -224,47 +224,66 @@
 @use '@assets/styles/mixins' as *
 .stores
   @apply flex flex-col gap-3 items-start
+
   &__btn--gradient
     @include button-orange-gradient
+
   &__container
     @apply flex flex-wrap gap-3
+
 .store
   @apply bg-gray flex gap-6 p-3 rounded-3xl max-w-[500px]
+
   &__data
-    @apply text-start
+    @apply text-start font-semibold
+
   &__actions
     @apply flex items-center flex-col content-center
+
     & button
       @apply hover:bg-lightGray p-2 rounded-full
+
 .modal-store
   @apply fixed inset-0 bg-black bg-opacity-70 z-[1000]
+
   &__form-scroll
     @apply flex flex-col gap-4 overflow-y-auto pr-2
+
   &__map
     @apply flex-1 h-full
+
   &__title
     @apply text-3xl
+
   &__container
     @apply flex flex-col gap-4 flex-1 overflow-hidden h-full
+
   &--active
     @apply bg-white rounded-3xl -translate-y-2/4 -translate-x-1/2 absolute
     @apply flex flex-col top-1/2 left-1/2 shadow-lg p-6 z-50
     width: calc(100% - 100px)
     height: calc(100% - 100px)
+
   &--small
     @apply w-fit h-fit
+
   &__content
     @apply flex flex-col overflow-hidden flex-auto overflow-y-auto
+
   &__working, &__delivery
     @apply flex gap-2
 
   &__button--outline
     @include button-orange-outline
     @apply flex-1
+
   &__button--gradient
     @include button-orange-gradient
     @apply flex-1
+    
 .closeModal
   @apply absolute top-1 -right-10;
 
+b
+  font-weight: 800
 </style>
