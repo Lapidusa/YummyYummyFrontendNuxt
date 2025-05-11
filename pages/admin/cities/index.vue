@@ -25,13 +25,15 @@
 
   const modalModeCity = ref<'none' | 'select' | 'add' | 'edit'| 'delete'>('none')
 
-  const visibleCities = computed(()=>{
-    if (!searchTerm.value.length) return allCities.value.cities
-    const term = searchTerm.value.toLowerCase()
+  const visibleCities = computed(() => {
+    const cities = allCities.value.cities.slice();
 
-    return allCities.value.cities.filter((city) => (
-      city.name.toLowerCase().includes(term)
-    ));
+    cities.sort((a, b) => a.name.localeCompare(b.name, 'ru'));
+
+    if (!searchTerm.value.length) return cities;
+
+    const term = searchTerm.value.toLowerCase();
+    return cities.filter(city => city.name.toLowerCase().includes(term));
   });
 
   const changeCity = async (id: string) => {
@@ -75,6 +77,8 @@
       activeCity.value = city.value;
       editableCity.value = {name: ''};
       error.value = '';
+      activeCity.value = allCities.value.cities[allCities.value.cities.length - 1];
+      cityStore.setCity(allCities.value.cities[allCities.value.cities.length - 1]);
     } else error.value = res.message;
   }
 
@@ -124,6 +128,10 @@
     allCities.value = await UseCity.getAllCity()
     cityStore.initCityFromStorage()
     activeCity.value = city.value;
+    if (!activeCity.value) {
+      activeCity.value = allCities.value.cities[0];
+      cityStore.setCity(allCities.value.cities[0]);
+    }
     if (activeCity.value) {
       await getStores(activeCity.value.id);
     }
@@ -137,21 +145,25 @@
         {{ activeCity?.name }}
       </button>
 
+      <p v-if="Object.keys(allCities.cities).length === 0">Нет городов</p>
+
       <button class="city__btn city__btn--add" @click="openModal('add')">
         <img src="@assets/icons/plus.svg" alt="add" />
       </button>
 
-      <button class="city__btn city__btn--update" @click="openModal('edit')">
-        <img src="@assets/icons/update.svg" alt="update" />
-      </button>
+      <template v-if="Object.keys(allCities.cities).length !== 0">
+          <button class="city__btn city__btn--update" @click="openModal('edit')">
+          <img src="@assets/icons/update.svg" alt="update" />
+        </button>
 
-      <button class="city__btn city__btn--delete" @click="openModal('delete')">
-        <img src="@assets/icons/delete.svg" alt="delete" />
-      </button>
+        <button class="city__btn city__btn--delete" @click="openModal('delete')">
+          <img src="@assets/icons/delete.svg" alt="delete" />
+        </button>
+      </template>
     </div>
 
-    <div class="store">
-      <NuxtLink v-if="activeCity" :to="`/admin/cities/${activeCity.id}/stores`" class="store__btn--gradient">
+    <div class="store" v-if="activeCity">
+      <NuxtLink  :to="`/admin/cities/${activeCity.id}/stores`" class="store__btn--gradient">
         Магазины
       </NuxtLink>
     </div>
@@ -246,37 +258,51 @@
 @use '@assets/styles/mixins' as *
 .city
   @apply flex items-center gap-3
+
   &__btn
     @apply font-bold hover:text-orange duration-300 ease-in
+
     &:nth-child(n+2)
       @apply  p-1 hover:bg-white hover:rounded-full
+
 .modal-city
   @apply fixed inset-0 bg-black bg-opacity-70 z-[1000]
+
   &__container
     @apply flex flex-col gap-4
+
   &__title
     @apply text-2xl font-bold
+
   &--active
+
     @apply bg-white rounded-3xl -translate-y-2/4 -translate-x-1/2 absolute top-1/2 left-1/2 shadow-lg p-6 w-fit h-fit z-50
   &__button
     @apply flex gap-2
+
     &--gradient
       @apply flex-1
       @include button-orange-gradient
+
     &--outline
       @include button-orange-outline
       @apply flex-1
+
   &__search
     @apply relative
+
     &-icon
       @apply absolute top-1/4 left-2 z-10
+
     &-clean
       @apply absolute top-1/4 right-2 z-10 fill-orange
+
 .store
   @include button-orange-gradient
-  &s
-    @apply flex justify-between items-center pb-5
+
+.stores
+  @apply flex justify-between items-center pb-5
+
 .closeModal
   @apply absolute top-1 -right-10;
-
 </style>

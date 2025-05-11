@@ -19,7 +19,7 @@
   const drawnItems = new L.FeatureGroup()
 
   watch(() => props.city, (newCoords) => {
-    if (map.value && Array.isArray(newCoords) && newCoords.length === 2) {
+    if (map.value && Array.isArray(newCoords.point) && newCoords.point.length === 2) {
       map.value.setView([newCoords.point[1],newCoords.point[0]], props.zoom) //setView на flyTo если мягко
     }
   })

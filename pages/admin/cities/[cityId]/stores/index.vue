@@ -66,6 +66,7 @@
       error.value = res.message;
     }
   }
+
   const updateStore = async () => {
     if (!validateAndSetError()) return
 
@@ -280,7 +281,7 @@
   &__button--gradient
     @include button-orange-gradient
     @apply flex-1
-    
+
 .closeModal
   @apply absolute top-1 -right-10;
 

@@ -21,12 +21,16 @@ import Logo from "@components/Logo.vue";
 .sidebar
   @apply flex flex-col justify-between py-3 px-2
   box-shadow: 0 6px 3px 0 rgba(0, 0, 0, 1)
+
   &__list
     @apply flex flex-col gap-1
+
   &__link
     @apply py-2 px-4 rounded hover:bg-orange hover:bg-opacity-10 transition-colors duration-200 text-orange font-semibold
+
     &.router-link-active
       @apply bg-orange text-white font-bold
+
       &:hover
         @apply opacity-90
 </style>

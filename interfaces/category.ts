@@ -15,6 +15,12 @@ export enum TypeCategory {
   CONSTRUCTOR = 2
 }
 
+export const TypeCategoryLabels: Record<TypeCategory, string> = {
+  [TypeCategory.GROUP]: 'Группа',
+  [TypeCategory.PIZZA]: 'Пицца',
+  [TypeCategory.CONSTRUCTOR]: 'Конструктор',
+}
+
 export interface SwapDataCategory {
   first_category: string
   second_category: string
@@ -26,6 +32,14 @@ export const CategoryFieldLabels: Record<string, string> = {
 };
 
 export const createEmptyCategoryRequest = (): CategoryRequest => ({
+  name: '',
+  store_id:'',
+  is_available: true,
+  type: TypeCategory.GROUP,
+})
+
+export const createEmptyCategory = (): Category => ({
+  id: '',
   name: '',
   store_id:'',
   is_available: true,

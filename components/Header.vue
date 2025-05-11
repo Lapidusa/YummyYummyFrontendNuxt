@@ -25,13 +25,15 @@
   const activeCity = ref<City | null>(null)
   const allCities = ref<{ cities: City[] }>({ cities: [] })
 
-  const visibleCities = computed(()=>{
-    if (!searchTerm.value.length) return allCities.value.cities
-    const term = searchTerm.value.toLowerCase()
+  const visibleCities = computed(() => {
+    const cities = allCities.value.cities.slice();
+    
+    cities.sort((a, b) => a.name.localeCompare(b.name, 'ru'));
 
-    return allCities.value.cities.filter((city) => (
-      city.name.toLowerCase().includes(term)
-    ));
+    if (!searchTerm.value.length) return cities;
+
+    const term = searchTerm.value.toLowerCase();
+    return cities.filter(city => city.name.toLowerCase().includes(term));
   });
 
   const sendCode = async () => {
@@ -56,8 +58,8 @@
       isModalOpen.value = false;
       error.value = false;
       localStorage.setItem("token", res.token);
-      const user = await UseUser.fetchUser()
-      isRole.value = user.role;
+      const resUser = await UseUser.fetchUser()
+      isRole.value = resUser.user.role;
     } else{
       error.value = true;
     }
@@ -123,9 +125,9 @@
     cityStore.initCityFromStorage()
 
     activeCity.value = city.value;
-    if (activeCity.value) isLoading.value = true;
+    if (activeCity.value || Object.keys(allCities.value).length !== 0) isLoading.value = true;
 
-    if (!activeCity.value) changeModalCities()
+    if (!activeCity.value && Object.keys(allCities.value).length === 0) changeModalCities()
     const token = localStorage.getItem('token');
     if (token) {
       const res = await UseUser.fetchUser()

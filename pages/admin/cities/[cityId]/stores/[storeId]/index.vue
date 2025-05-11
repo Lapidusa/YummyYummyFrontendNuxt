@@ -1,16 +1,17 @@
 <script setup lang="ts">
-  import {useRoute} from "#imports";
+  import {useRoute, validateEmptyFieldsByLabels} from "#imports";
   import {useStore} from "@composable/useStore";
   import {useCategory} from "@composable/useCategory";
   import {
     type Category,
     type CategoryRequest,
     TypeCategory,
+    TypeCategoryLabels,
     createEmptyCategoryRequest,
-    type SwapDataCategory
+    type SwapDataCategory, CategoryFieldLabels, createEmptyCategory
   } from "@interfaces/category";
-  import type {Store} from "@interfaces/store";
-
+  import {type Store} from "@interfaces/store";
+  import cloneDeep from 'lodash/cloneDeep'
   const UseCategory = useCategory();
   const UseStore = useStore();
   const route = useRoute();
@@ -22,8 +23,19 @@
   const error = ref<string>('')
   const allStores = ref<Store[]>([])
   const categories = ref<Category[]>([])
-  const newCategory = reactive(createEmptyCategoryRequest());
-  const emptyCategory = createEmptyCategoryRequest();
+  const newCategory = reactive(createEmptyCategory());
+  const emptyCategoryRequest = createEmptyCategoryRequest();
+  const emptyCategory = createEmptyCategory();
+
+  function validateAndSetError(): boolean {
+    const errorMessage = validateEmptyFieldsByLabels(newCategory, CategoryFieldLabels)
+    if (errorMessage) {
+      error.value = errorMessage
+      return false
+    }
+    error.value = ''
+    return true
+  }
 
   const swapCategory = async () => {
     const res = await UseCategory.swapPositionCategories();
@@ -35,27 +47,36 @@
   }
 
   const createCategory = async () => {
-    const res = await UseCategory.createCategory();
+    if (!validateAndSetError()) return
+    const res = await UseCategory.createCategory(newCategory);
     if (res.result){
-
+      closeModal();
+      await initialData();
     } else {
       error.value = res.message;
     }
   }
 
-  const updateCategory = async () => {
-    const res = await UseCategory.updateCategory();
+  const updateCategory = async (categoryId:string) => {
+    if (!validateAndSetError()) return
+    const obj: Category = {
+      ...newCategory,
+      id: categoryId,
+    }
+    const res = await UseCategory.updateCategory(obj);
     if (res.result){
-
+      closeModal();
+      await initialData();
     } else {
       error.value = res.message;
     }
   }
 
-  const deleteCategory = async () => {
-    const res = await UseCategory.deleteCategory();
+  const deleteCategory = async (categoryId: string) => {
+    const res = await UseCategory.deleteCategory(categoryId);
     if (res.result){
-
+      closeModal();
+      await initialData();
     } else {
       error.value = res.message;
     }
@@ -69,7 +90,7 @@
     if (category) {
       Object.assign(newCategory, category);
     } else {
-      Object.assign(newCategory, emptyCategory);
+      Object.assign(newCategory, emptyCategoryRequest);
     }
   }
 
@@ -78,11 +99,15 @@
     error.value = '';
   }
 
-  onMounted(async () => {
+  const initialData = async () =>{
     const res = await UseCategory.getCategoryByStoreId(storeId.value);
     categories.value = res.categories;
     const data = await UseStore.getStoresByCityId(cityId.value);
     allStores.value = data.stores;
+  }
+
+  onMounted(async () => {
+    await initialData()
   })
 </script>
 
@@ -96,7 +121,7 @@
         <div class="tooltip group-hover:opacity-100">
 
           <div class="tooltip__data">
-            <p>Тип категории: {{ category.type }}</p>
+            <p>Тип категории: {{ TypeCategoryLabels[category.type] }}</p>
             <p>Доступен: <span :class="category.is_available ? 'text-green': 'text-red'">{{category.is_available ? 'Да' : 'Нет'}}</span></p>
           </div>
           <div class="tooltip__actions">
@@ -109,8 +134,7 @@
   </div>
 
   <div v-if="modalMode !== 'none'" class="modal-category" data-modal-backdrop="static">
-    <div class="modal-category modal-category--active"
-    :class="{'modal-category--small': modalMode === 'add'}">
+    <div class="modal-category modal-category--active">
       <div class="modal-category__close cursor-pointer" @click="closeModal">
         <img class="closeModal" src="@assets/icons/closeWhite.svg" alt="Закрыть" />
       </div>
@@ -165,15 +189,29 @@
           <div class="modal-category__type-category">
             <label>Тип категории</label>
             <select v-model="newCategory.type" class="select">
-              <option :value="TypeCategory.GROUP">Группа</option>
-              <option :value="TypeCategory.PIZZA">Пицца</option>
-              <option :value="TypeCategory.CONSTRUCTOR">Конструктор</option>
+              <option :value="TypeCategory.GROUP"> {{ TypeCategoryLabels[TypeCategory.GROUP] }} </option>
+              <option :value="TypeCategory.PIZZA"> {{ TypeCategoryLabels[TypeCategory.PIZZA] }} </option>
+              <option :value="TypeCategory.CONSTRUCTOR"> {{ TypeCategoryLabels[TypeCategory.CONSTRUCTOR] }} </option>
             </select>
           </div>
+
+          <p class="text-red" v-if="error">{{ error }}</p>
+
+          <button
+              class="modal-store__button--gradient"
+              @click="modalMode === 'add' ? createCategory() : updateCategory(newCategory.id)"
+            >
+              {{ modalMode === 'add' ? 'Добавить' : 'Обновить' }}
+            </button>
         </template>
 
-        <template v-else-if="modalMode === 'delete'">
-          <div class="modal-category__title">Удалить категорию {{newCategory.name}}?</div>
+       <template v-else-if="modalMode === 'delete'">
+          <div class="modal-store__title">Удалить магазин {{ newCategory.name }}?</div>
+          <p class="text-red" v-if="error">{{ error }}</p>
+          <div class="flex gap-3">
+            <button @click="deleteCategory(newCategory.id)" class="modal-store__button--gradient">Удалить</button>
+            <button @click="closeModal" class="modal-store__button--outline">Отмена</button>
+          </div>
         </template>
       </div>
     </div>
@@ -184,8 +222,10 @@
 @use 'assets/styles/mixins' as *
 .categories
   @apply flex flex-col gap-3 items-baseline
+
   &__btn--gradient
     @include button-orange-gradient
+
 .category
   @apply relative
 
@@ -196,22 +236,33 @@
 .tooltip
   @apply absolute left-full ml-2 -translate-x-1/2 flex gap-3
   @apply bg-white text-black text-base p-2 rounded-[10px] shadow-lg
-  @apply opacity-0 transition-opacity duration-300 whitespace-nowrap z-10
+  @apply opacity-0 pointer-events-none transition-opacity duration-300 whitespace-nowrap z-10
+
+  .group:hover &
+    @apply opacity-100 pointer-events-auto
+
   &__actions
     @apply w-max flex flex-col gap-1
+
   &__data
     @apply flex flex-col
+
 .modal-category
   @apply fixed inset-0 bg-black bg-opacity-70 z-[1000]
+
   &--active
     @apply bg-white rounded-3xl -translate-y-2/4 -translate-x-1/2 absolute
-    @apply flex flex-col top-1/2 left-1/2 shadow-lg p-6 z-50 w-[90vw] h-[90vh]
+    @apply flex flex-col top-1/2 left-1/2 shadow-lg p-6 z-50 w-fit h-fit
+
   &--small
     @apply w-fit h-fit
+
   &__title
     @apply text-3xl
+
   &__container
     @apply flex flex-col gap-4
+
 .closeModal
   @apply absolute top-1 -right-10;
 </style>
