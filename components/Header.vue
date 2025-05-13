@@ -27,7 +27,6 @@
 
   const visibleCities = computed(() => {
     const cities = allCities.value.cities.slice();
-    
     cities.sort((a, b) => a.name.localeCompare(b.name, 'ru'));
 
     if (!searchTerm.value.length) return cities;

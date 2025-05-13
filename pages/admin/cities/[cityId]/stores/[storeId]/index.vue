@@ -8,24 +8,24 @@
     TypeCategory,
     TypeCategoryLabels,
     createEmptyCategoryRequest,
-    type SwapDataCategory, CategoryFieldLabels, createEmptyCategory
+    CategoryFieldLabels,
+    createEmptyCategory
   } from "@interfaces/category";
   import {type Store} from "@interfaces/store";
-  import cloneDeep from 'lodash/cloneDeep'
+
   const UseCategory = useCategory();
   const UseStore = useStore();
   const route = useRoute();
 
   const storeId = computed(() => route.params.storeId);
   const cityId = computed(() => route.params.cityId);
-  const swapData = ref<SwapDataCategory>({first_category: '', second_category: ''});
   const modalMode = ref<'none' | 'add' | 'update'| 'delete'>('none')
   const error = ref<string>('')
   const allStores = ref<Store[]>([])
   const categories = ref<Category[]>([])
   const newCategory = reactive(createEmptyCategory());
+
   const emptyCategoryRequest = createEmptyCategoryRequest();
-  const emptyCategory = createEmptyCategory();
 
   function validateAndSetError(): boolean {
     const errorMessage = validateEmptyFieldsByLabels(newCategory, CategoryFieldLabels)
@@ -37,12 +37,13 @@
     return true
   }
 
-  const swapCategory = async () => {
-    const res = await UseCategory.swapPositionCategories();
+  const swapCategory = async (categoryId1: string, categoryId2:string) => {
+    const res = await UseCategory.swapPositionCategories(categoryId1, categoryId2);
     if (res.result){
-
+      await initialData();
+      error.value = ''
     } else {
-      error.value = res.message;
+      error.value = res.message
     }
   }
 
@@ -114,12 +115,13 @@
 <template>
 
   <div class="categories">
-    <button class="categories__btn--gradient" @click="openModal('add')">Создать категорию</button>
-    <div class="category" v-for="category in categories" :key="category.id">
+    <button class="categories__btn--gradient flex" @click="openModal('add')">Создать категорию</button>
+    <div class="categories__container">
+      <div class="category " v-for="(category, index) in categories" :key="category.id">
       <NuxtLink :class="category.is_available ? 'category__link group' : 'category__link group line-through'">
         {{ category.name }}
         <div class="tooltip group-hover:opacity-100">
-
+          <button @click="swapCategory(category.id, categories[index-1].id)" v-if="categories[0].id!==category.id"><-</button>
           <div class="tooltip__data">
             <p>Тип категории: {{ TypeCategoryLabels[category.type] }}</p>
             <p>Доступен: <span :class="category.is_available ? 'text-green': 'text-red'">{{category.is_available ? 'Да' : 'Нет'}}</span></p>
@@ -128,8 +130,10 @@
             <button @click="openModal('update', category)"><img src="@assets/icons/update.svg" alt="Редактировать"></button>
             <button @click="openModal('delete', category)"><img src="@assets/icons/delete.svg" alt="Удалить"></button>
           </div>
+          <button @click="swapCategory(category.id, categories[index+1].id)" v-if="categories[categories.length - 1].id!==category.id">-></button>
         </div>
       </NuxtLink>
+    </div>
     </div>
   </div>
 
@@ -205,7 +209,7 @@
             </button>
         </template>
 
-       <template v-else-if="modalMode === 'delete'">
+        <template v-else-if="modalMode === 'delete'">
           <div class="modal-store__title">Удалить магазин {{ newCategory.name }}?</div>
           <p class="text-red" v-if="error">{{ error }}</p>
           <div class="flex gap-3">
@@ -226,6 +230,8 @@
   &__btn--gradient
     @include button-orange-gradient
 
+  &__container
+    @apply flex gap-4 flex-wrap items-baseline
 .category
   @apply relative
 

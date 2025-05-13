@@ -21,11 +21,6 @@ export const TypeCategoryLabels: Record<TypeCategory, string> = {
   [TypeCategory.CONSTRUCTOR]: 'Конструктор',
 }
 
-export interface SwapDataCategory {
-  first_category: string
-  second_category: string
-}
-
 export const CategoryFieldLabels: Record<string, string> = {
   name: 'Название',
   store_id: 'Магазин',

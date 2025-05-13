@@ -50,7 +50,7 @@ export const useCategory = () => {
   const deleteCategory = async (categoryId: string) => {
     const token = Auth.getToken();
     if (!token && categoryId) return
-    const res = await api.delete(`/category/${categoryId}/`);
+    const res = await api.delete(`/category/${categoryId}/`, {headers: {token}});
     return res.data;
   }
   return {getCategory, getAllCategories, getCategoryByStoreId, swapPositionCategories, createCategory, updateCategory, deleteCategory}
