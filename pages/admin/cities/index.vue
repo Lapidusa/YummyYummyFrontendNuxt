@@ -74,7 +74,7 @@
       modalModeCity.value = "none";
       allCities.value = await UseCity.getAllCity();
       cityStore.initCityFromStorage();
-      activeCity.value = city.value;
+      activeCity.value = res.city;
       editableCity.value = {name: ''};
       error.value = '';
       activeCity.value = allCities.value.cities[allCities.value.cities.length - 1];
@@ -128,6 +128,7 @@
     allCities.value = await UseCity.getAllCity()
     cityStore.initCityFromStorage()
     activeCity.value = city.value;
+    console.log(allCities.value.cities[0]);
     if (!activeCity.value) {
       activeCity.value = allCities.value.cities[0];
       cityStore.setCity(allCities.value.cities[0]);
@@ -152,7 +153,7 @@
       </button>
 
       <template v-if="Object.keys(allCities.cities).length !== 0">
-          <button class="city__btn city__btn--update" @click="openModal('edit')">
+        <button class="city__btn city__btn--update" @click="openModal('edit')">
           <img src="@assets/icons/update.svg" alt="update" />
         </button>
 

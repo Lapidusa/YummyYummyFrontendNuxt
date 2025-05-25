@@ -19,14 +19,16 @@
 
   const drawControl = ref<L.Control.Draw>()
 
-  const drawnItems = new L.FeatureGroup()
-
   const drawnDisplayItems = new L.FeatureGroup()
   const drawnEditableItems = new L.FeatureGroup()
 
   function emitUpdate(stores: Store[]) {
-    emit('update:storeItems', structuredClone(stores))
+    emit('update:storeItems', JSON.parse(JSON.stringify(stores)))
   }
+  // function emitUpdate(stores: Store[]) {
+  //   const cloned = stores.map(store => JSON.parse(JSON.stringify(store)))
+  //   emit('update:storeItems', cloned)
+  // }
 
   watch(() => props.displayStores, renderStoreItems, { deep: true, immediate: true })
   watch(() => props.editableStore, renderStoreItems, { deep: true, immediate: true })
@@ -43,7 +45,6 @@
 
     drawnDisplayItems.clearLayers()
     drawnEditableItems.clearLayers()
-
     // Только отображаемые магазины
     for (const store of props.displayStores || []) {
       if (!store.point || store.point.length !== 2) continue
@@ -109,7 +110,7 @@
 
 
   onMounted(() => {
-    const m = L.map('map', { attributionControl:false }).setView([props.city.point[1],props.city.point[0]], props.zoom)
+    const m = L.map('map', { attributionControl:false }).setView([props.city.point[1], props.city.point[0]], props.zoom)
     map.value = m
 
     map.value!.on('popupopen', function (e: any) {
@@ -177,15 +178,16 @@
   })
 
     renderStoreItems()
-    if (drawControl.value) {
-      map.value?.removeControl(drawControl.value)
-    }
     drawControl.value = new L.Control.Draw({
       edit: {
         featureGroup: drawnEditableItems,
       },
       draw: {
-        polygon: {},
+        polygon: {
+          shapeOptions: {
+            color: 'Orange',
+          }
+        },
         marker: {},
         circle: false,
         rectangle: false,
@@ -194,7 +196,6 @@
       },
     })
     map.value?.addControl(drawControl.value)
-
   })
 
 </script>

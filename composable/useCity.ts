@@ -4,7 +4,7 @@ import {useAuth} from "@composable/useAuth"
 
 export const useCity = ()  =>{
   const api = useApi();
-  const Auth = useAuth();
+  const auth = useAuth();
 
   const getAllCity = async () =>{
     const res = await api.get('/city/all-cities/');
@@ -17,21 +17,21 @@ export const useCity = ()  =>{
   }
 
   const addCity = async (cityName: Partial<City>) =>{
-    const token = Auth.getToken();
+    const token = auth.getToken();
     if (!token && cityName) return
     const res = await api.post('/city/',cityName, {headers: {token}});
     return res.data;
   }
 
   const updateCity = async (city: City) =>{
-    const token = Auth.getToken();
+    const token = auth.getToken();
     if (!token && city) return
     const res = await api.put('/city/',city, {headers: {token}});
     return res.data;
   }
 
   const deleteCity = async (cityId: string) =>{
-    const token = Auth.getToken();
+    const token = auth.getToken();
     if (!token && cityId) return
     const res = await api.delete(`/city/${cityId}`, {headers: {token}});
     return res.data;

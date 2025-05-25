@@ -29,6 +29,7 @@
   const error = ref<string>('')
   const modalMode = ref<'none'| 'view' | 'add' | 'update'| 'delete'>('none')
   const visibleStores = ref<Store[]>([]);
+  const isLoading = ref(false);
 
   const newStore = reactive(createEmptyStore());
   const newStoreCopy = computed(() => cloneDeep(newStore));
@@ -55,8 +56,9 @@
 
   const addStore = async () => {
     if (!validateAndSetError()) return
-
+    isLoading.value = true;
     const res = await UseStore.addStore(newStore);
+    isLoading.value = false;
 
     if (res.result){
       await getActiveCity()
@@ -86,6 +88,7 @@
     if (res.result){
       await getActiveCity()
       modalMode.value = 'none'
+      Object.assign(newStore, emptyStore);
     } else {
       error.value = res.message;
     }
@@ -97,14 +100,8 @@
   }
 
   const openModal = async (mode: typeof modalMode.value, store?: Store) => {
+    Object.assign(newStore, store ?? { ...emptyStore, city_id: cityId.value });
     modalMode.value = mode;
-
-    if (store) {
-      Object.assign(newStore, store);
-    } else {
-      Object.assign(newStore, emptyStore);
-      newStore.city_id = cityId.value.toString();
-    }
   }
 
   const closeModal = () => {
@@ -124,7 +121,7 @@
     <button class="stores__btn--gradient" @click="openModal('add')">Создать магазин</button>
     <div class="stores__container">
       <div class="store" v-for="store in visibleStores" :key="store.id">
-        <NuxtLink :to="`/admin/cities/${cityId}/stores/${store.id}`" class="store__data">
+        <NuxtLink :to="`/admin/cities/${cityId}/stores/${store.id}/categories`" class="store__data">
           <div class="store__address"><b>Адрес:</b> {{store.address}}</div>
           <div class="store__working"><b>Часы работы:</b> {{store.start_working_hours}} - {{store.end_working_hours}}</div>
           <div class="store__delivery"><b>Время доставки:</b> {{store.start_delivery_time}} - {{store.end_delivery_time}}</div>
@@ -185,19 +182,18 @@
             </div>
             <MapEditable
               :city="city"
-              :key="newStoreCopy.id"
+              :key="modalMode + '-' + (newStore.id || 'new')"
               :zoom="12"
               class="modal-store__map"
-              :editable-store="modalMode === 'add' ? emptyStore : newStoreCopy"
+              :editable-store="newStore"
 
               :displayStores="modalMode === 'add' ? visibleStores : removeStoreById(newStoreCopy.id)"
               @update:storeItems="onStoreUpdate"
             />
-<!--              :display-store = ''-->
 
             <p class="text-red" v-if="error">{{ error }}</p>
             <button
-              class="modal-store__button--gradient"
+              class="modal-store__button--gradient" :disabled="isLoading"
               @click="modalMode === 'add' ? addStore() : updateStore()"
             >
               {{ modalMode === 'add' ? 'Добавить' : 'Обновить' }}

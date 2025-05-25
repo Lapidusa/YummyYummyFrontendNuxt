@@ -9,7 +9,7 @@ const router = useRouter()
 
 const validateToken = async () => {
   const res = await UseUser.fetchUser();
-  if (res.result && res.user.role !== 4){
+  if (!res.result || res.user.role !== 4){
     await router.push('/')
   }
 }
@@ -21,16 +21,16 @@ onMounted(async ()=>{
 </script>
 
 <template>
-<div v-if="isLoading" class="bg-background-secondary h-dvh flex">
+  <div v-if="isLoading" class="bg-background-secondary flex">
     <SideBarAdmin></SideBarAdmin>
     <div class="containerA">
-        <NuxtPage></NuxtPage>
+      <NuxtPage></NuxtPage>
     </div>
   </div>
-<div v-else >Сервер не отвечает</div>
+  <div v-else >Сервер не отвечает</div>
 </template>
 
 <style scoped lang="sass">
   .containerA
-    @apply bg-lightGray min-h-screen w-full flex flex-col
+    @apply bg-lightGray min-h-screen w-full flex flex-col ml-28
 </style>

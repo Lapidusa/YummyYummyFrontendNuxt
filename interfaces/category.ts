@@ -11,8 +11,8 @@ export interface Category extends CategoryRequest {
 
 export enum TypeCategory {
   GROUP = 0,
-  PIZZA = 1,
-  CONSTRUCTOR = 2
+  CONSTRUCTOR = 1,
+  PIZZA = 2
 }
 
 export const TypeCategoryLabels: Record<TypeCategory, string> = {
@@ -25,13 +25,6 @@ export const CategoryFieldLabels: Record<string, string> = {
   name: 'Название',
   store_id: 'Магазин',
 };
-
-export const createEmptyCategoryRequest = (): CategoryRequest => ({
-  name: '',
-  store_id:'',
-  is_available: true,
-  type: TypeCategory.GROUP,
-})
 
 export const createEmptyCategory = (): Category => ({
   id: '',

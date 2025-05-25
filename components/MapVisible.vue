@@ -101,7 +101,7 @@
         button.addEventListener('click', () => {
           const id = button.getAttribute('data-id')
           if (id) {
-            navigateTo(`/admin/cities/${props.city.id}/stores/${id}`)
+            navigateTo(`/admin/cities/${props.city.id}/stores/${id}/categories`)
           }
         })
       }

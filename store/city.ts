@@ -15,7 +15,7 @@ export const useCityStore = defineStore('city', {
     },
     initCityFromStorage() {
       let cityRaw = localStorage.getItem("city");
-       if (cityRaw) {
+       if (cityRaw !== 'undefined' && cityRaw !== null) {
          this.city = JSON.parse(cityRaw);
       }
     }

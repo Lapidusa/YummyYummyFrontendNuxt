@@ -33,7 +33,7 @@ export default defineNuxtConfig({
   runtimeConfig: {
     public: {
       serverUrl: process.env.SERVER_URL,
-      mapAPI: process.env.API_KEY_YANDEX,
+      mediaURL: process.env.MEDIA_URL,
     }
   },
   compatibilityDate: '2025-04-27',

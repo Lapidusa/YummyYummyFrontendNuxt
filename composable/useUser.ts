@@ -8,17 +8,13 @@ export const useUser = () => {
   const fetchUser = async () => {
     const token = localStorage.getItem('token')
     if (!token) return
-    try {
       const res = await api.get('/user/get-user', {
         headers: { token }
       })
       if (res.data.result) {
         userStore.setUser(res.data.user)
-        return res.data
       }
-    } catch (error) {
-      console.error('Ошибка при получении пользователя:', error)
-    }
+    return res.data
   }
 
   const updateUser = async (formData: FormData) => {

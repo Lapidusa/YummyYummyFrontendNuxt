@@ -4,23 +4,28 @@
   import {useCity} from "@composable/useCity";
   import type {City} from "@interfaces/city";
   import {useCityStore} from "@store/city";
+  import type {Store} from "pinia";
   const isDropdownOpen = ref<boolean>(false);
   const isModalCityOpen = ref<boolean>(false);
   const isAuthorized = ref<boolean>(false);
-  const isRole = ref<0|1|2|3|4>(0);
-  const userPhoneNumber = ref<string>('');
-  const code = ref(['', '', '', '', '', '']);
   const error = ref<boolean>(false);
   const isModalOpen = ref<boolean>(false);
   const changeModal = ref<boolean>(false);
   const isLoading = ref<boolean>(false);
+
+  const isRole = ref<0|1|2|3|4>(0);
+  const userPhoneNumber = ref<string>('');
+  const code = ref(['', '', '', '', '', '']);
+
   const searchTerm = ref<string>('');
+  const activeStore = ref<Store| null>(null);
+
   const Auth = useAuth()
   const UseUser = useUser()
   const UseCity = useCity()
   const cityStore = useCityStore()
   const city = computed(() => cityStore.city)
-  let timeoutId: any = null;
+  const timeoutId = ref<ReturnType<typeof setTimeout>>();
 
   const activeCity = ref<City | null>(null)
   const allCities = ref<{ cities: City[] }>({ cities: [] })
@@ -87,12 +92,12 @@
     }
   };
   const openDropdown = () => {
-    clearTimeout(timeoutId);
+    clearTimeout(timeoutId.value);
     isDropdownOpen.value = true;
   };
 
   const startCloseDropdown = () => {
-    timeoutId = setTimeout(() => {
+    timeoutId.value = setTimeout(() => {
       isDropdownOpen.value = false;
     }, 200);
   };
@@ -127,6 +132,7 @@
     if (activeCity.value || Object.keys(allCities.value).length !== 0) isLoading.value = true;
 
     if (!activeCity.value && Object.keys(allCities.value).length === 0) changeModalCities()
+
     const token = localStorage.getItem('token');
     if (token) {
       const res = await UseUser.fetchUser()

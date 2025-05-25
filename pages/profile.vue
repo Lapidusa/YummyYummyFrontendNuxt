@@ -57,8 +57,6 @@ onMounted(() =>{
   }
   watchEffect(() => {
     if (user.value && user.value.name) {
-      console.log(user.value)
-
       fillFormWithUser(user.value)
     }
   })

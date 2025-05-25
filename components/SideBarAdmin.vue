@@ -19,8 +19,7 @@ import Logo from "@components/Logo.vue";
 
 <style scoped lang="sass">
 .sidebar
-  @apply flex flex-col justify-between py-3 px-2
-  box-shadow: 0 6px 3px 0 rgba(0, 0, 0, 1)
+  @apply flex flex-col justify-between py-3 px-2 fixed top-0 left-0 h-screen w-28 bg-white
 
   &__list
     @apply flex flex-col gap-1

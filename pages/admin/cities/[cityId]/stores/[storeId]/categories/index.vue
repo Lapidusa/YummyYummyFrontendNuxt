@@ -7,7 +7,6 @@
     type CategoryRequest,
     TypeCategory,
     TypeCategoryLabels,
-    createEmptyCategoryRequest,
     CategoryFieldLabels,
     createEmptyCategory
   } from "@interfaces/category";
@@ -25,7 +24,7 @@
   const categories = ref<Category[]>([])
   const newCategory = reactive(createEmptyCategory());
 
-  const emptyCategoryRequest = createEmptyCategoryRequest();
+  const emptyCategoryRequest = createEmptyCategory();
 
   function validateAndSetError(): boolean {
     const errorMessage = validateEmptyFieldsByLabels(newCategory, CategoryFieldLabels)
@@ -60,11 +59,8 @@
 
   const updateCategory = async (categoryId:string) => {
     if (!validateAndSetError()) return
-    const obj: Category = {
-      ...newCategory,
-      id: categoryId,
-    }
-    const res = await UseCategory.updateCategory(obj);
+    newCategory.id = categoryId;
+    const res = await UseCategory.updateCategory(newCategory);
     if (res.result){
       closeModal();
       await initialData();
@@ -85,9 +81,6 @@
 
   const openModal = async (mode: typeof modalMode.value, category?: CategoryRequest) => {
     modalMode.value = mode;
-    if (mode === 'add') {
-
-    }
     if (category) {
       Object.assign(newCategory, category);
     } else {
@@ -117,23 +110,27 @@
   <div class="categories">
     <button class="categories__btn--gradient flex" @click="openModal('add')">Создать категорию</button>
     <div class="categories__container">
-      <div class="category " v-for="(category, index) in categories" :key="category.id">
-      <NuxtLink :class="category.is_available ? 'category__link group' : 'category__link group line-through'">
-        {{ category.name }}
+      <div class="category group" v-for="(category, index) in categories" :key="category.id">
+        <NuxtLink :to="`/admin/cities/${cityId}/stores/${storeId}/categories/${category.id}`" :class="category.is_available ? 'category__link' : 'category__link group line-through'">
+          {{ category.name }}
+        </NuxtLink>
         <div class="tooltip group-hover:opacity-100">
-          <button @click="swapCategory(category.id, categories[index-1].id)" v-if="categories[0].id!==category.id"><-</button>
+          <button @click="swapCategory(category.id, categories[index-1]?.id)" v-if="categories[0].id !== category.id">
+            <img class="category__img" src="@assets/icons/arrow-l.svg" alt="left">
+          </button>
           <div class="tooltip__data">
             <p>Тип категории: {{ TypeCategoryLabels[category.type] }}</p>
             <p>Доступен: <span :class="category.is_available ? 'text-green': 'text-red'">{{category.is_available ? 'Да' : 'Нет'}}</span></p>
           </div>
           <div class="tooltip__actions">
-            <button @click="openModal('update', category)"><img src="@assets/icons/update.svg" alt="Редактировать"></button>
-            <button @click="openModal('delete', category)"><img src="@assets/icons/delete.svg" alt="Удалить"></button>
+            <button @click="openModal('update', category)"><img class="category__img" src="@assets/icons/update.svg" alt="Редактировать"></button>
+            <button @click="openModal('delete', category)"><img class="category__img" src="@assets/icons/delete.svg" alt="Удалить"></button>
           </div>
-          <button @click="swapCategory(category.id, categories[index+1].id)" v-if="categories[categories.length - 1].id!==category.id">-></button>
+          <button @click="swapCategory(category.id, categories[index+1]?.id)" v-if="categories[categories.length - 1].id!==category.id">
+            <img class="category__img" src="@assets/icons/arrow-r.svg" alt="right">
+          </button>
         </div>
-      </NuxtLink>
-    </div>
+      </div>
     </div>
   </div>
 
@@ -170,25 +167,10 @@
           </div>
 
           <div class="modal-category__available">
-            <div class="radio-group">
+            <div class="radio-group flex gap-4">
             <label>Доступно</label>
-            <label>
-              <input
-                type="radio"
-                :value="true"
-                v-model="newCategory.is_available"
-              />
-              Да
-            </label>
-            <label>
-              <input
-                type="radio"
-                :value="false"
-                v-model="newCategory.is_available"
-              />
-              Нет
-            </label>
-          </div>
+              <ToggleInputYesOrNo v-model="newCategory.is_available"/>
+            </div>
           </div>
           <div class="modal-category__type-category">
             <label>Тип категории</label>
@@ -202,19 +184,19 @@
           <p class="text-red" v-if="error">{{ error }}</p>
 
           <button
-              class="modal-store__button--gradient"
+              class="modal-category__button--gradient"
               @click="modalMode === 'add' ? createCategory() : updateCategory(newCategory.id)"
             >
               {{ modalMode === 'add' ? 'Добавить' : 'Обновить' }}
-            </button>
+          </button>
         </template>
 
         <template v-else-if="modalMode === 'delete'">
-          <div class="modal-store__title">Удалить магазин {{ newCategory.name }}?</div>
+          <div class="modal-category__title">Удалить категорию {{ newCategory.name }}?</div>
           <p class="text-red" v-if="error">{{ error }}</p>
-          <div class="flex gap-3">
-            <button @click="deleteCategory(newCategory.id)" class="modal-store__button--gradient">Удалить</button>
-            <button @click="closeModal" class="modal-store__button--outline">Отмена</button>
+          <div class="flex gap-3 justify-center">
+            <button @click="deleteCategory(newCategory.id)" class="modal-category__button--gradient">Удалить</button>
+            <button @click="closeModal" class="modal-category__button--outline">Отмена</button>
           </div>
         </template>
       </div>
@@ -239,8 +221,11 @@
     @include text-hover
     @apply text-xl relative
 
+  &__img
+    @apply w-5 h-5 object-contain
+
 .tooltip
-  @apply absolute left-full ml-2 -translate-x-1/2 flex gap-3
+  @apply absolute left-full w-max -translate-x-1/2 flex gap-3 items-center
   @apply bg-white text-black text-base p-2 rounded-[10px] shadow-lg
   @apply opacity-0 pointer-events-none transition-opacity duration-300 whitespace-nowrap z-10
 
@@ -269,6 +254,13 @@
   &__container
     @apply flex flex-col gap-4
 
+  &__button--gradient
+    @include button-orange-gradient
+    @apply flex-1
+
+  &__button--outline
+    @include button-orange-outline
+    @apply flex-1
 .closeModal
   @apply absolute top-1 -right-10;
 </style>
