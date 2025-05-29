@@ -21,7 +21,8 @@ export interface ProductVariant {
   fats: number
   carbohydrates: number
   is_available: boolean
-  image: File | string
+  image: File | string | null
+  image_url?: string | null,
 }
 
 export enum Dough {
@@ -31,6 +32,7 @@ export enum Dough {
 
 export interface Pizza extends Product {
   dough: Dough.THICK_DOUGH
+  ingredients: IngredientInPizza[]
 }
 
 export enum TypeProduct {
@@ -48,6 +50,13 @@ export const TypeProductLabels: Record<TypeProduct, string> = {
 export const TypeDoughLabels: Record<Dough, string> = {
   [Dough.THICK_DOUGH]: 'Традиционное тесто',
   [Dough.THIN_DOUGH]: 'Тонкое тесто',
+}
+
+export interface IngredientInPizza {
+  id: string
+  name: string
+  image: File | string | null
+  is_deleted?: boolean
 }
 
 export const createEmptyProduct = () :Product => ({
@@ -69,6 +78,7 @@ export const createEmptyPizza = (): Pizza => ({
   type: TypeProduct.PIZZA,
   variants: [],
   dough: Dough.THICK_DOUGH,
+  ingredients: [],
 })
 
 export const createEmptyProductVariant = () :ProductVariant => ({
@@ -81,6 +91,12 @@ export const createEmptyProductVariant = () :ProductVariant => ({
   fats: 10,
   carbohydrates: 5,
   is_available: true,
-  image: new File([], '')
+  image: new File([], ''),
 })
 
+export const createEmptyIngredient = ():IngredientInPizza=>({
+  id: '',
+  name: '',
+  image: new File([], ''),
+  is_deleted: false
+})

@@ -140,119 +140,122 @@
 </script>
 
 <template>
-  <div class="stores">
-    <div class="city">
-      <button class="city__btn" @click="openModal('select')">
-        {{ activeCity?.name }}
-      </button>
-
-      <p v-if="Object.keys(allCities.cities).length === 0">Нет городов</p>
-
-      <button class="city__btn city__btn--add" @click="openModal('add')">
-        <img src="@assets/icons/plus.svg" alt="add" />
-      </button>
-
-      <template v-if="Object.keys(allCities.cities).length !== 0">
-        <button class="city__btn city__btn--update" @click="openModal('edit')">
-          <img src="@assets/icons/update.svg" alt="update" />
+  <div class="wrapper">
+    <div class="stores">
+      <div class="city">
+        <button class="city__btn" @click="openModal('select')">
+          {{ activeCity?.name }}
         </button>
 
-        <button class="city__btn city__btn--delete" @click="openModal('delete')">
-          <img src="@assets/icons/delete.svg" alt="delete" />
+        <p v-if="Object.keys(allCities.cities).length === 0">Нет городов</p>
+
+        <button class="city__btn city__btn--add" @click="openModal('add')">
+          <img src="@assets/icons/plus.svg" alt="add" />
         </button>
-      </template>
-    </div>
 
-    <div class="store" v-if="activeCity">
-      <NuxtLink  :to="`/admin/cities/${activeCity.id}/stores`" class="store__btn--gradient">
-        Магазины
-      </NuxtLink>
-    </div>
-  </div>
+        <template v-if="Object.keys(allCities.cities).length !== 0">
+          <button class="city__btn city__btn--update" @click="openModal('edit')">
+            <img src="@assets/icons/update.svg" alt="update" />
+          </button>
 
-  <MapVisible v-if="activeCity"
-        :city="activeCity"
-        :zoom="10"
-        :store-items="storesByCity"/>
-  <div
-    v-if="modalModeCity !== 'none'"
-    class="modal-city"
-    id="static-modal"
-    data-modal-backdrop="static"
-    aria-hidden="true"
-  >
-    <div class="modal-city modal-city--active">
-      <div class="modal-city__close cursor-pointer" @click="closeModal">
-        <img class="closeModal" src="@assets/icons/closeWhite.svg" alt="Закрыть" />
+          <button class="city__btn city__btn--delete" @click="openModal('delete')">
+            <img src="@assets/icons/delete.svg" alt="delete" />
+          </button>
+        </template>
       </div>
-      <div class="modal-city__container">
-        <template v-if="modalModeCity === 'select'">
-          <div class="modal-city__title">Выберите свой город</div>
-          <div class="modal-city__search">
-            <img class="modal-city__search-icon" src="@assets/icons/search.svg" alt="Search" />
-            <input
-              type="search"
-              class="modal-city__search"
-              v-model.trim="searchTerm"
-            />
-            <button
-              v-if="searchTerm"
-              class="clear-button"
-              @click.prevent="searchTerm = ''"
-            >
-              <img
-                class="modal-city__search-clean"
-                src="@assets/icons/x-letter.svg"
-                alt="Clear Input"
+
+      <div class="store" v-if="activeCity">
+        <NuxtLink  :to="`/admin/cities/${activeCity.id}/stores`" class="store__btn--gradient">
+          Магазины
+        </NuxtLink>
+      </div>
+    </div>
+
+    <MapVisible v-if="activeCity"
+                :city="activeCity"
+                :zoom="10"
+                :store-items="storesByCity"/>
+    <div
+        v-if="modalModeCity !== 'none'"
+        class="modal-city"
+        id="static-modal"
+        data-modal-backdrop="static"
+        aria-hidden="true"
+    >
+      <div class="modal-city modal-city--active">
+        <div class="modal-city__close cursor-pointer" @click="closeModal">
+          <img class="closeModal" src="@assets/icons/closeWhite.svg" alt="Закрыть" />
+        </div>
+        <div class="modal-city__container">
+          <template v-if="modalModeCity === 'select'">
+            <div class="modal-city__title">Выберите свой город</div>
+            <div class="modal-city__search">
+              <img class="modal-city__search-icon" src="@assets/icons/search.svg" alt="Search" />
+              <input
+                  type="search"
+                  class="modal-city__search"
+                  v-model.trim="searchTerm"
               />
-            </button>
-          </div>
-          <div class="modal-city__cities">
-            <div
-              class="modal-city__city"
-              v-for="city in visibleCities"
-              :key="city.id"
-            >
-              <button @click="changeCity(city.id)" class="modal-city__text--hover">
-                {{ city.name }}
+              <button
+                  v-if="searchTerm"
+                  class="clear-button"
+                  @click.prevent="searchTerm = ''"
+              >
+                <img
+                    class="modal-city__search-clean"
+                    src="@assets/icons/x-letter.svg"
+                    alt="Clear Input"
+                />
               </button>
             </div>
-          </div>
-        </template>
+            <div class="modal-city__cities">
+              <div
+                  class="modal-city__city"
+                  v-for="city in visibleCities"
+                  :key="city.id"
+              >
+                <button @click="changeCity(city.id)" class="modal-city__text--hover">
+                  {{ city.name }}
+                </button>
+              </div>
+            </div>
+          </template>
 
-        <template v-else-if="modalModeCity === 'add'">
-          <div class="modal-city__title">Добавить город</div>
-          <input
-            type="text"
-            v-model.trim="editableCity.name"
-            placeholder="Введите название города"
-          />
-          <p class="text-red" v-if="error">{{error}}</p>
-          <button class="modal-city__button--gradient" @click="addCity">Добавить</button>
-        </template>
+          <template v-else-if="modalModeCity === 'add'">
+            <div class="modal-city__title">Добавить город</div>
+            <input
+                type="text"
+                v-model.trim="editableCity.name"
+                placeholder="Введите название города"
+            />
+            <p class="text-red" v-if="error">{{error}}</p>
+            <button class="modal-city__button--gradient" @click="addCity">Добавить</button>
+          </template>
 
-        <template v-else-if="modalModeCity === 'edit'">
-          <div class="modal-city__title">Редактировать город</div>
-          <input
-            type="text"
-            v-model.trim="editableCity.name"
-            :placeholder="activeCity?.name || 'Введите новое название'"
-          />
-          <p class="text-red" v-if="error">{{error}}</p>
-          <button @click="updateCity" class="modal-city__button--gradient">Обновить</button>
-        </template>
+          <template v-else-if="modalModeCity === 'edit'">
+            <div class="modal-city__title">Редактировать город</div>
+            <input
+                type="text"
+                v-model.trim="editableCity.name"
+                :placeholder="activeCity?.name || 'Введите новое название'"
+            />
+            <p class="text-red" v-if="error">{{error}}</p>
+            <button @click="updateCity" class="modal-city__button--gradient">Обновить</button>
+          </template>
 
-        <template v-else-if="modalModeCity === 'delete'">
-          <div class="modal-city__title">Удалить город {{activeCity?.name}}?</div>
-          <p class="text-red" v-if="error">{{error}}</p>
-          <div class="modal-city__button">
-            <button @click="deleteCity" class="modal-city__button--gradient">Удалить</button>
-            <button @click="closeModal" class="modal-city__button--outline">Отмена</button>
-          </div>
-        </template>
+          <template v-else-if="modalModeCity === 'delete'">
+            <div class="modal-city__title">Удалить город {{activeCity?.name}}?</div>
+            <p class="text-red" v-if="error">{{error}}</p>
+            <div class="modal-city__button">
+              <button @click="deleteCity" class="modal-city__button--gradient">Удалить</button>
+              <button @click="closeModal" class="modal-city__button--outline">Отмена</button>
+            </div>
+          </template>
+        </div>
       </div>
     </div>
   </div>
+
 </template>
 
 <style scoped lang="sass">
@@ -303,7 +306,8 @@
 
 .stores
   @apply flex justify-between items-center pb-5
-
+.wrapper
+  @apply flex flex-col w-full
 .closeModal
   @apply absolute top-1 -right-10;
 </style>

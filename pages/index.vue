@@ -3,8 +3,10 @@ import { onMounted, ref, watch } from "vue"
 import { useCategory } from "@composable/useCategory"
 import type { Store } from "@interfaces/store"
 import { useCityStore } from "@store/city"
+import type {City} from "@interfaces/city";
 
 const storeCity = useCityStore()
+const activeCity = computed(() => {storeCity.city})
 const store = ref<Store>()
 const city = ref<City>()
 const UseCategory = useCategory()
@@ -27,7 +29,7 @@ watch(
     (newCity) => {
       if (newCity?.id) {
         city.value = newCity
-        initialData(newCity.store_id)
+        initialData(newCity.id)
       }
     },
     { immediate: false, deep: true }

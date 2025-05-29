@@ -1,6 +1,6 @@
 import {useApi} from "@composable/api";
 import {useAuth} from "@composable/useAuth";
-import type {Product, ProductResponse} from "@interfaces/product";
+import type {Product} from "@interfaces/product";
 
 export const useProduct = () => {
   const api = useApi();
@@ -49,14 +49,17 @@ export const useProduct = () => {
     });
     return res.data;
   }
+
   const updateProduct = async (productData: Product) => {
     const token = auth.getToken();
     if (!token) return
     const formData = new FormData();
     const mappedVariants = productData.variants.map(v => {
+      const isChanged = v.image instanceof File;
       return {
         ...v,
-        image_url: typeof v.image === 'string' ? v.image : null
+        changed_image: isChanged,
+        image: v.image instanceof File ? v.image.name : v.image,
       };
     });
 
@@ -64,15 +67,16 @@ export const useProduct = () => {
       ...productData,
       variants: mappedVariants,
     };
-
+    console.log(mappedVariants)
     formData.append("product_data_json", JSON.stringify(mappedData));
 
-    productData.variants.forEach((v) => {
+    productData.variants.forEach((v, index) => {
+      console.log(v.image)
       if (v.image instanceof File) {
-        formData.append("images", v.image);
+        formData.append("images", v.image, `variant-${index}-${v.image.name}`);
       }
     });
-    
+
     const res = await api.put(`/product/update/${productData.id}`, formData, {
       headers: {
         token: token,
@@ -80,6 +84,7 @@ export const useProduct = () => {
     });
     return res.data;
   }
+
   const deleteProduct = async (productId: string) => {
     const token = auth.getToken();
     if (!token) return

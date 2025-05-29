@@ -12,14 +12,18 @@ import Logo from "@components/Logo.vue";
       <NuxtLink to="/admin/orders" class="sidebar__link">Заказы</NuxtLink>
       <NuxtLink to="/admin/history" class="sidebar__link">История</NuxtLink>
     </ul>
-    <NuxtLink to="/admin/profile" class="sidebar__link">Профиль</NuxtLink>
+    <div class="flex flex-col gap-1">
+      <NuxtLink to="/admin/users" class="sidebar__link">Пользователи</NuxtLink>
+      <NuxtLink to="/admin/profile" class="sidebar__link">Профиль</NuxtLink>
+    </div>
+
   </div>
 </template>
 
 
 <style scoped lang="sass">
 .sidebar
-  @apply flex flex-col justify-between py-3 px-2 fixed top-0 left-0 h-screen w-28 bg-white
+  @apply flex flex-col justify-between py-3 px-2 fixed top-0 left-0 h-screen  bg-white
 
   &__list
     @apply flex flex-col gap-1

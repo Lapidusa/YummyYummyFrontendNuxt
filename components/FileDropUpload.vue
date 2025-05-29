@@ -2,7 +2,7 @@
 import { ref, watch, onBeforeUnmount } from 'vue'
 const config = useRuntimeConfig()
 const props = defineProps<{
-  modelValue: File | null
+  modelValue: File | string | null
 }>()
 
 const emit = defineEmits<{
@@ -17,11 +17,13 @@ const previewUrl = ref<string | null>(null)
 watch(
   () => props.modelValue,
   (file) => {
+
     if (file instanceof File) {
       const objectUrl = URL.createObjectURL(file)
       previewUrl.value = objectUrl
     } else if (typeof file === 'string') {
-      previewUrl.value = `${config.public.serverUrl}/media/products/${file}` // путь к изображению на сервере
+      previewUrl.value = `${config.public.serverUrl}${file}`
+      console.log(previewUrl.value)// путь к изображению на сервере
     } else {
       previewUrl.value = null
     }

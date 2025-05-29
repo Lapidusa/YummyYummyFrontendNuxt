@@ -1,9 +1,9 @@
 // ~/composables/useApi.ts
 import axios from 'axios'
+import {listUrl} from "@/utils/urlConfig";
 
 export const useApi = () => {
-  const config = useRuntimeConfig()
   return axios.create({
-    baseURL: config.public.serverUrl as string
+    baseURL: listUrl.apiUrl as string
   })
 }

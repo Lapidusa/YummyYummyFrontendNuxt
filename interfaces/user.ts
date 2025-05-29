@@ -7,5 +7,5 @@ export interface User {
   dateOfBirth: Date | null
   imageUrl: string | null
   scores: number
-  role: number
+  role: 0|1|2|3|4
 }

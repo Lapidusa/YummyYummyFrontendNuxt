@@ -1,12 +1,13 @@
 <script setup lang="ts">
+  import {ref, onMounted} from "vue";
   import {useAuth} from "@composable/useAuth";
   import {useUser} from "@composable/useUser";
   import {useCity} from "@composable/useCity";
   import type {City} from "@interfaces/city";
   import {useCityStore} from "@store/city";
-  import type {Store} from "pinia";
   const isDropdownOpen = ref<boolean>(false);
   const isModalCityOpen = ref<boolean>(false);
+  const isModalStoreOpen = ref<boolean>(false);
   const isAuthorized = ref<boolean>(false);
   const error = ref<boolean>(false);
   const isModalOpen = ref<boolean>(false);
@@ -18,7 +19,6 @@
   const code = ref(['', '', '', '', '', '']);
 
   const searchTerm = ref<string>('');
-  const activeStore = ref<Store| null>(null);
 
   const Auth = useAuth()
   const UseUser = useUser()
@@ -27,8 +27,8 @@
   const city = computed(() => cityStore.city)
   const timeoutId = ref<ReturnType<typeof setTimeout>>();
 
-  const activeCity = ref<City | null>(null)
   const allCities = ref<{ cities: City[] }>({ cities: [] })
+  const activeCity = ref<City | null>(null)
 
   const visibleCities = computed(() => {
     const cities = allCities.value.cities.slice();
@@ -69,14 +69,6 @@
     }
   }
 
-  const LogOut = async () => {
-    const res = await UseUser.logOut()
-    if (res.result) {
-      isAuthorized.value = false;
-      isRole.value = 0;
-    }
-  }
-
   const moveFocus = ({event, direction}: { event: any, direction: any }) => {
     const current = event.target;
     if (current.value.length >= current.maxLength) {
@@ -91,19 +83,6 @@
       }
     }
   };
-  const openDropdown = () => {
-    clearTimeout(timeoutId.value);
-    isDropdownOpen.value = true;
-  };
-
-  const startCloseDropdown = () => {
-    timeoutId.value = setTimeout(() => {
-      isDropdownOpen.value = false;
-    }, 200);
-  };
-  const openModal = () => {
-    isModalOpen.value = true;
-  };
 
   const closeModal = () => {
     isModalOpen.value = false;
@@ -117,6 +96,8 @@
       isModalCityOpen.value = false
       cityStore.setCity(city);
       isLoading.value = true;
+
+      isModalStoreOpen.value = true
     }
   }
 
@@ -124,23 +105,37 @@
     isModalCityOpen.value = !isModalCityOpen.value;
   }
 
+  const handleDeliveryOption = (option: string) => {
+    isModalStoreOpen.value = false
+
+    switch(option) {
+      case 'address':
+        console.log('Пользователь выбрал указать адрес доставки')
+        // Ваша логика для адреса доставки
+        break
+      case 'pickup':
+        console.log('Пользователь выбрал самовывоз из пиццерии')
+        // Логика для самовывоза
+        break
+      case 'login':
+        console.log('Пользователь выбрал войти')
+        // Логика авторизации / перехода к логину
+        break
+    }
+  }
+
+  const closeStoreModal = () => {
+    isModalStoreOpen.value = false
+  }
+
   onMounted(async () => {
     allCities.value = await UseCity.getAllCity()
     cityStore.initCityFromStorage()
 
     activeCity.value = city.value;
-    if (activeCity.value || Object.keys(allCities.value).length !== 0) isLoading.value = true;
+    if (activeCity.value || Object.keys(allCities.value).length === 0) isLoading.value = true;
 
-    if (!activeCity.value && Object.keys(allCities.value).length === 0) changeModalCities()
-
-    const token = localStorage.getItem('token');
-    if (token) {
-      const res = await UseUser.fetchUser()
-      if (res.result){
-        isAuthorized.value = true;
-        isRole.value = res.user.role;
-      }
-    }
+    if (!activeCity.value && Object.keys(allCities.value).length !== 0) changeModalCities()
   })
 </script>
 
@@ -154,111 +149,89 @@
       </div>
     </div>
     <div class="header__right">
-      <button v-if="!isAuthorized" @click="openModal" class="header__button header__button--outline">Войти</button>
-
-<!--      <NuxtLink v-if="isAuthorized && isRole == 1" class="header__button header__button&#45;&#45;outline">-->
-<!--        <p class="header__button-text">Доставка</p>-->
-<!--      </NuxtLink>-->
-<!--      <NuxtLink v-else-if="isAuthorized && isRole == 2" class="header__button header__button&#45;&#45;outline">-->
-<!--        <p class="header__button-text">Кухня</p>-->
-<!--      </NuxtLink>-->
-      <NuxtLink to="/manager/home" v-else-if="isAuthorized && isRole == 3" class="header__button header__button--outline">
-        <p class="header__button-text">Управление</p>
-      </NuxtLink>
-      <NuxtLink to="/admin/home" v-else-if="isAuthorized && isRole == 4" class="header__button header__button--outline">
-        <p class="header__button-text">Админ</p>
-      </NuxtLink>
-      <div class="relative">
-        <NuxtLink to="/profile" v-if="isAuthorized" class="header__button header__button--outline"
-        @mouseenter="openDropdown" @mouseleave="startCloseDropdown">
-
-          <div class="header__button-icon"></div>
-          <p class="header__button-text">Профиль</p>
-        </NuxtLink>
-        <div v-show="isDropdownOpen" class="absolute z-10 mt-2 bg-white w-fill divide-gray-100 rounded-lg shadow"
-        @mouseenter="openDropdown" @mouseleave="startCloseDropdown">
-          <ul class=" py-2 text-sm">
-            <li>
-              <NuxtLink href="/profile" class="block px-4 py-2 hover:bg-orange hover:text-white dark:hover:bg-background-dark-light dark:hover:text-main-contrast">Мой профиль</NuxtLink>
-            </li>
-            <li>
-              <a href="#" class="block px-4 py-2 hover:bg-orange hover:text-white dark:hover:bg-background-dark-light dark:hover:text-main-contrast">Заказы</a>
-            </li>
-            <li>
-              <a href="#" @click="LogOut" class="block px-4 py-2 hover:bg-orange hover:text-white dark:hover:bg-background-dark-light dark:hover:text-main-contrast">Выйти</a>
-            </li>
-          </ul>
-        </div>
-      </div>
+      <AuthButton
+          @update:isAuthorized="isAuthorized = $event"
+          @update:role="isRole = $event"
+      >
+        <template #default="{ isRole, logOut }">
+          <NuxtLink v-if="isRole === 3" to="/manager/home" class="header__button header__button--outline">
+            Управление
+          </NuxtLink>
+          <NuxtLink v-else-if="isRole === 4" to="/admin/home" class="header__button header__button--outline">
+            Админ
+          </NuxtLink>
+        </template>
+      </AuthButton>
     </div>
   </div>
 
+<!--  <div-->
+<!--  id="static-modal" data-modal-backdrop="static"-->
+<!--  aria-hidden="true"-->
+<!--  :class="{'hidden': !isModalOpen, 'modal-header': isModalOpen}"-->
+<!--  >-->
+<!--    <template v-if="!changeModal">-->
+<!--      <div class="modal-header modal-header&#45;&#45;active">-->
+<!--        <div class="modal-header__top">-->
+<!--          <div class="modal-header__text">-->
+<!--            <h2 class="modal-header__title">Вход в аккаунт</h2>-->
+<!--            <p class="modal-header__description">-->
+<!--              Введите номер телефона, чтобы войти или зарегистрироваться-->
+<!--            </p>-->
+<!--          </div>-->
+<!--          <div class="modal-header__img"></div>-->
+<!--        </div>-->
+
+<!--        <PhoneNumber v-model="userPhoneNumber" />-->
+
+<!--        <p v-show="error" class="modal-header__error">Введите полный номер</p>-->
+
+<!--        <button @click="sendCode()" class="modal-header__btn">-->
+<!--          <p class="modal-header__btn-text">Получить код в SMS</p>-->
+<!--        </button>-->
+
+<!--        <div @click="closeModal" type="button" class="modal-header__close cursor-pointer">-->
+<!--          <img class="closeModal" src="../assets/icons/closeWhite.svg" alt="" />-->
+<!--        </div>-->
+<!--      </div>-->
+<!--    </template>-->
+
+<!--    <div v-else>-->
+<!--      <div class="modal-header modal-header&#45;&#45;active">-->
+<!--        <div class="modal-header__top">-->
+<!--          <div class="modal-header__text">-->
+<!--            <h2 class="modal-header__title text-xl">Вход в аккаунт</h2>-->
+<!--            <p class="modal-header__description">Введите СМС-код</p>-->
+<!--          </div>-->
+<!--          <div class="modal-header__img"></div>-->
+
+<!--        </div>-->
+<!--        <div class="modal-header__otp otp-container flex items-center justify-center gap-4">-->
+<!--          <input type="text" maxlength="1" class="otp-input" v-model="code[0]" @input="moveFocus({event : $event, direction : 1})" />-->
+<!--          <input type="text" maxlength="1" class="otp-input" v-model="code[1]" @input="moveFocus({event : $event, direction : 1})" />-->
+<!--          <input type="text" maxlength="1" class="otp-input" v-model="code[2]" @input="moveFocus({event : $event, direction : 1})" />-->
+<!--          <input type="text" maxlength="1" class="otp-input" v-model="code[3]" @input="moveFocus({event : $event, direction : 1})" />-->
+<!--          <input type="text" maxlength="1" class="otp-input" v-model="code[4]" @input="moveFocus({event : $event, direction : 1})" />-->
+<!--          <input type="text" maxlength="1" class="otp-input" v-model="code[5]" @input="moveFocus({event : $event, direction : 1})" />-->
+<!--        </div>-->
+<!--        <div v-if="error" class="modal-header__error text-red">-->
+<!--          <p class="text-center py-2">Неверный код или срок действия кода истёк</p>-->
+<!--        </div>-->
+<!--        <button @click="LogIn" class="modal-header__btn btnLogIn w-full justify-center">-->
+<!--          <p class="btnLogIn__text">Войти</p>-->
+<!--        </button>-->
+<!--        <div @click="closeModal" type="button" class="modal-header__close cursor-pointer">-->
+<!--          <img class="closeModal" src="../assets/icons/closeWhite.svg" alt="" />-->
+<!--        </div>-->
+<!--      </div>-->
+<!--    </div>-->
+<!--  </div>-->
+
+  <!-- Модалка выбора города -->
   <div
-  id="static-modal" data-modal-backdrop="static"
-  aria-hidden="true"
-  :class="{'hidden': !isModalOpen, 'modal-header': isModalOpen}"
-  >
-    <template v-if="!changeModal">
-      <div class="modal-header modal-header--active">
-        <div class="modal-header__top">
-          <div class="modal-header__text">
-            <h2 class="modal-header__title">Вход в аккаунт</h2>
-            <p class="modal-header__description">
-              Введите номер телефона, чтобы войти или зарегистрироваться
-            </p>
-          </div>
-          <div class="modal-header__img"></div>
-        </div>
-
-        <PhoneNumber v-model="userPhoneNumber" />
-
-        <p v-show="error" class="modal-header__error">Введите полный номер</p>
-
-        <button @click="sendCode()" class="modal-header__btn">
-          <p class="modal-header__btn-text">Получить код в SMS</p>
-        </button>
-
-        <div @click="closeModal" type="button" class="modal-header__close cursor-pointer">
-          <img class="closeModal" src="../assets/icons/closeWhite.svg" alt="" />
-        </div>
-      </div>
-    </template>
-
-    <div v-else>
-      <div class="modal-header modal-header--active">
-        <div class="modal-header__top">
-          <div class="modal-header__text">
-            <h2 class="modal-header__title text-xl">Вход в аккаунт</h2>
-            <p class="modal-header__description">Введите СМС-код</p>
-          </div>
-          <div class="modal-header__img"></div>
-
-        </div>
-        <div class="modal-header__otp otp-container flex items-center justify-center gap-4">
-          <input type="text" maxlength="1" class="otp-input" v-model="code[0]" @input="moveFocus({event : $event, direction : 1})" />
-          <input type="text" maxlength="1" class="otp-input" v-model="code[1]" @input="moveFocus({event : $event, direction : 1})" />
-          <input type="text" maxlength="1" class="otp-input" v-model="code[2]" @input="moveFocus({event : $event, direction : 1})" />
-          <input type="text" maxlength="1" class="otp-input" v-model="code[3]" @input="moveFocus({event : $event, direction : 1})" />
-          <input type="text" maxlength="1" class="otp-input" v-model="code[4]" @input="moveFocus({event : $event, direction : 1})" />
-          <input type="text" maxlength="1" class="otp-input" v-model="code[5]" @input="moveFocus({event : $event, direction : 1})" />
-        </div>
-        <div v-if="error" class="modal-header__error text-red">
-          <p class="text-center py-2">Неверный код или срок действия кода истёк</p>
-        </div>
-        <button @click="LogIn" class="modal-header__btn btnLogIn w-full justify-center">
-          <p class="btnLogIn__text">Войти</p>
-        </button>
-        <div @click="closeModal" type="button" class="modal-header__close cursor-pointer">
-          <img class="closeModal" src="../assets/icons/closeWhite.svg" alt="" />
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div
-  id="static-modal" data-modal-backdrop="static"
-  aria-hidden="true"
-  :class="{'hidden': !isModalCityOpen, 'modal-header': isModalCityOpen}"
+      id="static-modal" data-modal-backdrop="static"
+      aria-hidden="true"
+      :class="{'hidden': !isModalCityOpen, 'modal-header': isModalCityOpen}"
   >
     <div class="modal-header modal-header--active">
       <div class="modal-header__title">
@@ -268,9 +241,9 @@
         <img class="modal-header__search-icon" src="@assets/icons/search.svg" alt="Search"/>
         <input type="search" class="modal-header__search" v-model.trim="searchTerm">
         <button
-                v-if="searchTerm"
-                class="clear-button"
-                @click.prevent="searchTerm = ''"
+            v-if="searchTerm"
+            class="clear-button"
+            @click.prevent="searchTerm = ''"
         >
           <img class="modal-header__search-clean" src="@assets/icons/x-letter.svg" alt="Clear Input"/>
         </button>
@@ -285,6 +258,34 @@
       </div>
     </div>
   </div>
+
+  <!-- Модалка выбора магазина / способа получения -->
+  <div
+      id="store-modal" data-modal-backdrop="static"
+      aria-hidden="true"
+      :class="{'hidden': !isModalStoreOpen, 'modal-header': isModalStoreOpen}"
+  >
+    <div class="modal-header modal-header--active">
+      <div class="modal-header__title">
+        Выберите способ получения
+      </div>
+      <div class="modal-header__buttons">
+        <button @click="handleDeliveryOption('address')" class="modal-button">
+          Указать адрес доставки
+        </button>
+        <button @click="handleDeliveryOption('pickup')" class="modal-button">
+          Забрать из пиццерии
+        </button>
+        <button @click="handleDeliveryOption('login')" class="modal-button">
+          Войти
+        </button>
+      </div>
+      <div @click="closeStoreModal" type="button" class="modal-header__close cursor-pointer">
+        <img class="closeModal" src="@assets/icons/closeWhite.svg" alt="" />
+      </div>
+    </div>
+  </div>
+
 </template>
 
 <style scoped lang="sass">
@@ -314,14 +315,19 @@
 
       &:hover .header__button-icon
         background-image: url('@/assets/icons/profile-hover.svg')
+
 .modal-header
   @apply fixed inset-0 bg-black bg-opacity-50 flex flex-col gap-3
+
   &__search
     @apply relative
+
     &-icon
       @apply absolute top-1/4 left-2 z-10
+
     &-clean
       @apply absolute top-1/4 right-2 z-10 fill-orange
+
   &--active
     @apply bg-white rounded-3xl -translate-y-2/4 -translate-x-1/2 absolute top-1/2 left-1/2 shadow-lg p-6 w-fit h-fit z-50
 
@@ -332,21 +338,19 @@
     background-image: url('@/assets/images/phone.png')
     width: 60px
     height: 60px
+
   &__error
     @apply text-red
-  &__text
-    @apply flex flex-col w-2/3 gap-3
-  &__top
-    @apply flex items-center justify-between
+
   &__btn
     @apply w-full
     @include button-orange-gradient
+
   &__city
     @apply w-fit
+
   &__text--hover
     @apply hover:text-orange duration-300 ease-in cursor-pointer w-fit
-
-
 
 .closeModal
   @apply absolute top-1 -right-10;

@@ -32,5 +32,5 @@ onMounted(async ()=>{
 
 <style scoped lang="sass">
   .containerA
-    @apply bg-lightGray min-h-screen w-full flex flex-col ml-28
+    @apply bg-lightGray min-h-screen w-full flex ml-[171px]
 </style>
