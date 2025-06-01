@@ -41,6 +41,28 @@ export enum TypeProduct {
   PIZZA = 2
 }
 
+export const ProductFieldLabels: Record<string, string> = {
+  name: 'Название',
+  description: 'Описание',
+  category_id: 'Категория',
+  is_available: 'Доступен',
+  type: 'Тип продукта',
+  variants: 'Варианты',
+};
+
+export const ProductVariant: Record<string, string> = {
+  size: 'Размер',
+  price: 'Цена',
+  weight: 'Вес',
+  calories: 'Калории',
+  proteins: 'Белки',
+  fats: 'Жиры',
+  carbohydrates: 'Углеводы',
+  is_available: 'Доступен',
+  image: 'Изображение',
+  image_url: 'URL изображения',
+};
+
 export const TypeProductLabels: Record<TypeProduct, string> = {
   [TypeProduct.GROUP]: 'Группа',
   [TypeProduct.PIZZA]: 'Пицца',

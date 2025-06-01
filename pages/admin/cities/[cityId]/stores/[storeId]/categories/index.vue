@@ -29,7 +29,7 @@
   function validateAndSetError(): boolean {
     const errorMessage = validateEmptyFieldsByLabels(newCategory, CategoryFieldLabels)
     if (errorMessage) {
-      error.value = errorMessage
+      error.value = "Заполните обязательные поля: - " + errorMessage
       return false
     }
     error.value = ''

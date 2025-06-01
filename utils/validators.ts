@@ -20,5 +20,5 @@ export function validateEmptyFieldsByLabels<T extends Record<string, any>>(
 
   if (emptyFields.length === 0) return null
 
-  return `Заполните обязательные поля:\n- ${emptyFields.join('\n- ')}`
+  return `${emptyFields.join('\n- ')}`
 }

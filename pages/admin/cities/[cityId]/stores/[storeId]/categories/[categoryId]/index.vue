@@ -4,7 +4,7 @@
     createEmptyPizza,
     createEmptyProduct, createEmptyProductVariant, type IngredientInPizza,
     type Pizza,
-    type Product, TypeProduct, TypeProductLabels,
+    type Product, ProductFieldLabels, ProductVariant, TypeProduct, TypeProductLabels,
   } from "@interfaces/product";
   import { useProduct } from "@composable/useProduct";
   import { useRoute } from "#imports";
@@ -30,6 +30,26 @@
   const ingredients =ref<IngredientInPizza[]>([]);
   const products = ref<Product[]>([]);
 
+  function validateAndSetError(): boolean {
+    if (product.type === 0){
+      const errorMessageProduct = validateEmptyFieldsByLabels(product, ProductFieldLabels)
+      const errorMessageVariant = validateEmptyFieldsByLabels(product.variants, ProductVariant)
+      if (errorMessageProduct || errorMessageVariant) {
+        error.value = "Заполните обязательные поля: -" + errorMessageProduct! + " у варианта: -" + errorMessageVariant!;
+        return false
+      }
+
+    }else if (product.type === 2){
+      const errorMessageProduct = validateEmptyFieldsByLabels(product, ProductFieldLabels)
+      const errorMessageVariant = validateEmptyFieldsByLabels(pizza.variants, ProductVariant)
+      if (errorMessageProduct || errorMessageVariant) {
+        error.value = errorMessageProduct! + errorMessageVariant!;
+        return false
+      }
+    }
+    error.value = ''
+    return true
+  }
 
   const initialData = async () =>{
     const res = await UseProduct.getProductsByCategory(categoryId.value)
@@ -72,6 +92,7 @@
     modalModeIngredients.value = 'none';
     error.value = '';
   }
+
   function validator() {
     const images = []
     product.variants.forEach((variant) => {
@@ -99,6 +120,7 @@
   }
   const createProduct = async () => {
     try {
+      if (!validateAndSetError()) return
       error.value = '';
 
       validator();
@@ -127,6 +149,7 @@
 
   const updateProduct = async () => {
     try {
+      if (!validateAndSetError()) return
       error.value = '';
       validator();
 
@@ -492,7 +515,7 @@
   @apply fixed inset-0 bg-black bg-opacity-70 z-[1000]
 
   &--active
-    @apply bg-white rounded-3xl -translate-y-2/4 w-max -translate-x-1/2 absolute
+    @apply bg-white rounded-3xl -translate-y-2/4 w-max -translate-x-1/2 absolute max-w-[80%]
     @apply flex flex-col top-1/2 left-1/2 shadow-lg p-6 z-50 h-max
 
   &--small

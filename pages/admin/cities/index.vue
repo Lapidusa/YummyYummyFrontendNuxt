@@ -128,7 +128,6 @@
     allCities.value = await UseCity.getAllCity()
     cityStore.initCityFromStorage()
     activeCity.value = city.value;
-    console.log(allCities.value.cities[0]);
     if (!activeCity.value) {
       activeCity.value = allCities.value.cities[0];
       cityStore.setCity(allCities.value.cities[0]);
