@@ -1,6 +1,6 @@
 export const listUrl = (process.env.NODE_ENV === 'production')
   ? {
-    apiUrl:  'http://http://31.129.45.84:8000',
+    apiUrl:  'http://31.129.45.84:8000',
     baseUrl: 'http://31.129.45.84:3000'
   }
   : {

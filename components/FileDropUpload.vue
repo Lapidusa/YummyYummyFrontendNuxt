@@ -66,7 +66,7 @@ function handleFileUpload(event: Event) {
 </script>
 <template>
   <div
-    class="relative border-2 border-dashed rounded-xl p-4 text-center cursor-pointer transition hover:bg-gray-50"
+    class="relative border-2 border-dashed rounded-xl p-2 text-center cursor-pointer transition hover:bg-gray-50"
     @click="triggerFileInput"
     @dragover.prevent="onDragOver"
     @dragleave.prevent="onDragLeave"
@@ -81,11 +81,11 @@ function handleFileUpload(event: Event) {
       @change="handleFileUpload"
     />
     <div v-if="previewUrl">
-      <img :src="previewUrl" alt="Превью" class="mx-auto max-h-32 object-contain" />
-      <p class="text-sm text-gray-500 mt-2">Кликни, чтобы изменить</p>
+      <img :src="previewUrl" alt="Превью" class="mx-auto max-h-24 object-contain" />
+      <p class="text-sm text-gray-500 mt-2">Изменить</p>
     </div>
     <div v-else>
-      <p class="text-gray-400">Перетащи изображение сюда или кликни, чтобы выбрать</p>
+      <p class="text-gray-400">Перетащите изображение сюда или кликните, чтобы выбрать</p>
     </div>
   </div>
 </template>

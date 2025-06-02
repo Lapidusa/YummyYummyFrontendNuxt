@@ -1,21 +1,25 @@
   <script setup lang="ts">
   import {
-    createEmptyIngredient,
     createEmptyPizza,
-    createEmptyProduct, createEmptyProductVariant, type IngredientInPizza,
+    createEmptyProduct, createEmptyProductVariant,
     type Pizza,
-    type Product, TypeProduct, TypeProductLabels,
+    type Product, ProductFieldLabels, ProductVariant, TypeProduct, TypeProductLabels,
   } from "@interfaces/product";
-  import { useProduct } from "@composable/useProduct";
+  import {
+    createEmptyIngredient, type IngredientResponse, IngredientInPizzaLabels, type Ingredient
+  } from "@interfaces/ingredient";
   import { useRoute } from "#imports";
   import { type Category } from "@interfaces/category";
   import ToggleInputYesOrNo from "@components/ToggleInputYesOrNo.vue";
   import { useCategory } from "@composable/useCategory";
+  import { useProduct } from "@composable/useProduct";
+  import { useIngredient } from "@composable/useIngredient";
 
   const config = useRuntimeConfig()
   const route = useRoute();
   const UseProduct = useProduct()
   const UseCategory = useCategory()
+  const UseIngredient = useIngredient()
   const categoryId = computed(() => route.params.categoryId);
 
   const modalMode = ref<'none' | 'add' | 'update'| 'delete'>('none')
@@ -26,31 +30,65 @@
   const product = reactive<Product>(createEmptyProduct());
   const pizza = reactive<Pizza>(createEmptyPizza());
   const category = ref<Category|null>(null);
-  const ingredient =reactive<IngredientInPizza>(createEmptyIngredient());
-  const ingredients =ref<IngredientInPizza[]>([]);
+  const ingredient =reactive<Ingredient>(createEmptyIngredient());
+
+  const ingredients =ref<Ingredient[]>([]);
   const products = ref<Product[]>([]);
 
-
   const initialData = async () =>{
-    const res = await UseProduct.getProductsByCategory(categoryId.value)
-    products.value = res.products;
+    const resProducts = await UseProduct.getProductsByCategory(categoryId.value)
+    products.value = resProducts.products;
+
     const resCategory = await UseCategory.getCategory(categoryId.value);
     category.value = resCategory.category;
-    // const res = await
+
+    const resIngredients = await UseIngredient.getIngredients()
+    ingredients.value = resIngredients.ingredients;
   }
 
-  const openModal = async (mode: typeof modalMode.value, isProduct: boolean, data?: Product) => {
+  function validateAndSetError(type: 'product' | 'ingredient'): boolean {
+    if(type === 'product') {
+      const errorMessageProduct = validateEmptyFieldsByLabels(product, ProductFieldLabels)
+      if (product.type === 0){
+        const errorMessageVariant = validateEmptyFieldsByLabels(product.variants, ProductVariant)
+        if (errorMessageProduct || errorMessageVariant) {
+          error.value = "Заполните обязательные поля: -" + errorMessageProduct! + " у варианта: -" + errorMessageVariant!;
+          return false
+        }
+
+      }else if (product.type === 2){
+        const errorMessageVariant = validateEmptyFieldsByLabels(pizza.variants, ProductVariant)
+        if (errorMessageProduct || errorMessageVariant) {
+          error.value = "Заполните обязательные поля: -" + errorMessageProduct! + " у варианта: -" + errorMessageVariant!;
+          return false
+        }
+      }
+    }else if (type === 'ingredient') {
+      const errorMessageIngredient = validateEmptyFieldsByLabels(ingredient, IngredientInPizzaLabels)
+      if (errorMessageIngredient) {
+        error.value = "Заполните обязательные поля: -" + errorMessageIngredient;
+        return false
+      }
+    }
+
+    error.value = ''
+    return true
+  }
+
+  const openModal = async (mode: typeof modalMode.value, isProduct: boolean, data?: Product|Ingredient) => {
     if(isProduct){
       modalMode.value = mode;
       if (data) {
-        if(data.type === 0)
+        const prod = data as Product;
+
+        if(prod.type === 0)
           Object.assign(product, {
-            ...data,
-            variants: [...data.variants]
+            ...prod,
+            variants: prod.variants.map(v => ({ ...v })),
           });
-        else if(data.type === 2){
-          Object.assign(product, {...data});
-          Object.assign(pizza, {...data, variants: [...data.variants]});
+        else if(prod.type === 2){
+          Object.assign(product, {...prod});
+          Object.assign(pizza, {...prod, variants: prod.variants.map(v => ({ ...v }))});
         }
       }
       else {
@@ -61,7 +99,8 @@
     else{
       modalModeIngredients.value = mode;
       if(data){
-        Object.assign(ingredient, {...data})
+        const ingr = data as Ingredient;
+        Object.assign(ingredient, {...ingr})
       }
       else Object.assign(ingredient, createEmptyIngredient());
     }
@@ -72,36 +111,12 @@
     modalModeIngredients.value = 'none';
     error.value = '';
   }
-  function validator() {
-    const images = []
-    product.variants.forEach((variant) => {
-      images.push(variant.image)
-    });
-    if (images.length !== product.variants.length) {
-      error.value = 'Не выбрана фотография';
-      return;
-    }
 
-    if (!product.name || !product.description) {
-      error.value = 'Заполните название и описание продукта';
-      return;
-    }
-
-    if (product.type === TypeProduct.GROUP && product.variants.length === 0) {
-      error.value = 'Добавьте хотя бы один вариант обычного продукта';
-      return;
-    }
-
-    if (product.type === TypeProduct.PIZZA && pizza.variants.length === 0) {
-      error.value = 'Добавьте хотя бы один вариант пиццы';
-      return;
-    }
-  }
   const createProduct = async () => {
     try {
       error.value = '';
 
-      validator();
+      validateAndSetError('product');
 
       const payload: Product = {
         ...product,
@@ -128,7 +143,7 @@
   const updateProduct = async () => {
     try {
       error.value = '';
-      validator();
+      validateAndSetError('product');
 
       const payload: Product = {
         ...product,
@@ -169,6 +184,43 @@
     }
   };
 
+  const createIngredient = async () => {
+    validateAndSetError('ingredient')
+    const { id, ...ingredientData } = ingredient;
+    const payload = ingredientData as Omit<IngredientResponse, "id">;
+    const res = await UseIngredient.createIngredient(payload)
+    if (res.result) {
+      error.value = ''
+      await initialData();
+      closeModal();
+    } else {
+      error.value = res.message || 'Ошибка при создании продукта';
+    }
+  }
+
+  const updateIngredient = async () => {
+    validateAndSetError('ingredient')
+    const res = await UseIngredient.updateIngredient(ingredient)
+    if (res.result) {
+      error.value = ''
+      await initialData();
+      closeModal();
+    } else {
+      error.value = res.message || 'Ошибка при изменении продукта';
+    }
+  }
+
+  const deleteIngredient = async () => {
+    const res = await UseIngredient.deleteIngredient(ingredient.id)
+    if (res.result) {
+      error.value = ''
+      await initialData();
+      closeModal();
+    }
+    else {
+      error.value = res.message || 'Ошибка при удалении продукта';
+    }
+  }
   const upsertItem = async (
     type: 'product' | 'pizza' | 'ingredient',
     action: 'add' | 'remove',
@@ -217,16 +269,34 @@
         throw new Error('Unknown type');
     }
   };
-  const getImage = (index: number): File | string | null => {
-    const variant = product.type === 0 ? product.variants[index] : pizza.variants[index];
-    return variant.image || variant.image_url || null;
+  const getImage = (type: 'product' | 'ingredient', indexOrField?: number | "overlay"): File | string | null => {
+    if (type === 'product' && typeof indexOrField === 'number') {
+      const variant = product.type === 0 ? product.variants[indexOrField] : pizza.variants[indexOrField];
+      return variant.image || variant.image_url || null;
+    }
+    else if (type === 'ingredient') {
+      if (indexOrField === "overlay") {
+        return ingredient.overlay_image
+      }
+      return ingredient.image
+    }
+    return null;
   }
-  const setImage = (index: number, file: File | string | null) => {
-    const variants = product.type === 0 ? product.variants : pizza.variants;
-    variants[index].image = file;
-    // Если пришёл локальный файл — обновляем image_url в null, чтобы не было путаницы
-    if (file instanceof File) {
-      variants[index].image_url = null;
+
+  const setImage = (type: 'product' | 'ingredient', file: File | string | null, indexOrField: number | "overlay", ) => {
+    if (type === 'product' && typeof indexOrField === 'number') {
+      const variants = product.type === 0 ? product.variants : pizza.variants;
+      variants[indexOrField].image = file;
+      if (file instanceof File) {
+        variants[indexOrField].image_url = null;
+      }
+    }
+    else if (type === 'ingredient') {
+      if (indexOrField === "overlay") {
+        ingredient.overlay_image = file
+      } else {
+        ingredient.image = file
+      }
     }
   }
 
@@ -247,7 +317,7 @@
 </script>
 
 <template>
-  <div class="flex gap-3 max-sm:flex-col-reverse md:flex-row ">
+  <div class="flex gap-3 max-sm:flex-col-reverse md:flex-row justify-between">
     <div class="products">
       <button class="products__btn--gradient" @click="openModal('add', true)">Создать продукт</button>
       <div class="products__container" v-if="products.length > 0">
@@ -256,13 +326,12 @@
           <div class="product" v-for="product in products" :key="product.id">
             <div class="product__image_wrapper" :class="!product.is_available ? 'not_available' : ''">
               <img
-                  :src="`${config.public.serverUrl}${getDisplayVariant(product)!.image}`"
-                  :alt="getDisplayVariant(product)!.size"
-                  v-if="product.variants"
-                  class="w-full aspect-square object-cover"
+                :src="`${config.public.serverUrl}${getDisplayVariant(product)!.image}`"
+                :alt="getDisplayVariant(product)!.size"
+                v-if="product.variants"
+                class="w-full aspect-square object-cover"
               />
             </div>
-
             <div class="product__down">
               <div class="product__down-text">
                 <p>{{product.name}}</p>
@@ -285,8 +354,19 @@
     <div class="ingredients">
       <button class="ingredients__btn ingredients__btn--gradient" @click="openModal('add',false)">Добавить ингредиент</button>
       <div class="ingredients__wrapper">
-        <div class="ingredient" v-if="ingredients.length!==0" v-for="ingredient in ingredients">
-          {{ingredient}}
+        <div class="ingredient" v-if="ingredients.length !== 0" v-for="ingredient in ingredients">
+          <img class="ingredient__img" :src="`${config.public.serverUrl}${ingredient.image}`" alt="Изображение">/
+          <img class="ingredient__img" :src="`${config.public.serverUrl}${ingredient.overlay_image}`" alt="Изображение для конструтора">
+          <p class="ingredient__text">{{ingredient.name}}</p>
+          <p class="ingredient__text">{{ingredient.price}}₽</p>
+          <div class="ingredient__down-actions">
+            <button class="ingredient__down-btn view-product__btn--update" @click="openModal('update', false, ingredient)">
+              <img src="@assets/icons/update.svg" alt="update" />
+            </button>
+            <button class="ingredient__down-btn view-product__btn--delete" @click="openModal('delete', false, ingredient)">
+              <img src="@assets/icons/delete.svg" alt="delete" />
+            </button>
+          </div>
         </div>
         <p v-else>Нет доступных ингредиентов</p>
       </div>
@@ -304,46 +384,64 @@
             <div class="modal-product__title">
               {{ modalMode === "add" ? 'Добавить продукт' : 'Редактировать продукт' }}
             </div>
-            <input
-                v-model="product.name"
-                type="text"
-                placeholder="Название"
-                class="input"
-            />
-            <input
-                v-model="product.description"
-                type="text"
-                placeholder="Описание"
-                class="input"
-            />
-            <div class="modal-product__type-product">
-              <label>Тип продукта</label>
-              <select v-model="product.type" class="select">
-                <option :value="TypeProduct.GROUP"> {{ TypeProductLabels[TypeProduct.GROUP] }} </option>
-                <option :value="TypeProduct.PIZZA"> {{ TypeProductLabels[TypeProduct.PIZZA] }} </option>
-                <option :value="TypeProduct.CONSTRUCTOR"> {{ TypeProductLabels[TypeProduct.CONSTRUCTOR] }} </option>
-              </select>
-            </div>
-            <div class="modal-product__available">
-              <label>Доступно</label>
-              <ToggleInputYesOrNo v-model="product.is_available"/>
+            <label class="label-column" for="input-product-name">
+              Название
+              <input
+                  id="input-product-name"
+                  v-model="product.name"
+                  type="text"
+                  placeholder="Название"
+                  class="input"
+              />
+            </label>
+            <label class="label-column" for="input-product-description">
+              Описание
+              <input
+                  id="input-product-description"
+                  v-model="product.description"
+                  type="text"
+                  placeholder="Описание"
+                  class="input"
+              />
+            </label>
+            <div class="modal-product__controls">
+              <div class="modal-product__type-product">
+                <label>Тип продукта
+                  <select v-model="product.type" class="select" onfocus="this.size=3;"
+                          onblur="this.size=0;"
+                          onchange="this.size=3; this.blur();">
+                    <option :value="TypeProduct.GROUP">{{ TypeProductLabels[TypeProduct.GROUP] }}</option>
+                    <option :value="TypeProduct.PIZZA">{{ TypeProductLabels[TypeProduct.PIZZA] }}</option>
+                    <option :value="TypeProduct.CONSTRUCTOR">{{ TypeProductLabels[TypeProduct.CONSTRUCTOR] }}</option>
+                  </select>
+                </label>
+              </div>
+              <div class="modal-product__available">
+                <label>Доступно</label>
+                <ToggleInputYesOrNo v-model="product.is_available" />
+              </div>
             </div>
             <div class="modal-product__add-variant">
               <button v-if="product.type === 0" class="modal-product__add-variant_btn" @click="upsertItem('product','add')">
                 Добавить вариант обычного продукта
               </button>
-              <button v-else-if="product.type === 2" class="modal-product__add-variant_btn" @click="upsertItem('pizza','add')">
+              <button v-if="product.type === 2" class="modal-product__add-variant_btn" @click="upsertItem('pizza','add')">
                 Добавить вариант пиццы
               </button>
             </div>
             <div v-if="product.type === 2" class="modal-product__add-ingredient">
-              <button @click="upsertItem('ingredient','add')">Добавить ингредиент</button>
-              <div v-for="(ingredient, index) in pizza.ingredients" class="modal-product__add-ingredient_wrapper">
 
+              <button class="modal-ingredient__button--gradient" @click="upsertItem('ingredient','add')">Добавить ингредиент</button>
+              <div v-for="(ingredient, index) in pizza.ingredients" class="modal-product__add-ingredient_wrapper">
+                {{ingredient}}
+                <label :for="'ingredient-deleted'" class="flex gap-3 items-center">
+                  Удаляемый пользователем в пицце
+                  <ToggleInputYesOrNo id="ingredient-deleted" v-model="pizza.ingredients[index].is_deleted"/>
+                </label>
               </div>
             </div>
           </div>
-          <div class="modal-product__column">
+          <div class="modal-product__column" v-if="(product.type === 0 && product.variants.length !== 0) || (product.type === 2 && pizza.variants.length !== 0)">
             <div class="modal-product__add-variant">
               <div v-if="product.type === 0" v-for="(variant, index) in product.variants" :key="index" class="modal-product__add-variant_wrapper">
                 <div class="modal-product__variant-index">
@@ -351,8 +449,8 @@
                   <button @click="upsertItem('product','remove', index)"><img class="modal-product__img" src="@assets/icons/delete.svg" alt="Удалить"></button>
                 </div>
                 <FileDropUpload
-                    :modelValue="getImage(index)"
-                    @update:modelValue="setImage(index, $event)"
+                    :modelValue="getImage('product', index)"
+                    @update:modelValue="setImage('product', $event, index)"
                 />
                 <label :for="'product-size' + index ">
                   Название варианта:
@@ -390,8 +488,8 @@
                   {{ index + 1 }} <button @click="upsertItem('pizza','remove', index)"><img class="modal-product__img" src="@assets/icons/delete.svg" alt="Удалить"></button>
                 </div>
                 <FileDropUpload
-                    :modelValue="getImage(index)"
-                    @update:modelValue="setImage(index, $event)"
+                    :modelValue="getImage('product', index)"
+                    @update:modelValue="setImage('product', $event, index)"
                 />
                 <label :for="'pizza-size' + index" class="flex flex-col">
                   Название варианта:
@@ -455,10 +553,73 @@
   </div>
 </div>
   <div v-if="modalModeIngredients !== 'none'" class="modal-ingredient">
-    <div class="modal-ingredient__close cursor-pointer" @click="closeModal">
-      <img class="closeModal" src="@assets/icons/closeWhite.svg" alt="Закрыть" />
+    <div class="modal-ingredient modal-ingredient--active">
+      <div class="modal-ingredient__close cursor-pointer" @click="closeModal">
+        <img class="closeModal" src="@assets/icons/closeWhite.svg" alt="Закрыть" />
+      </div>
+
+      <div class="modal-ingredient__container">
+        <template v-if="modalModeIngredients === 'add' || modalModeIngredients === 'update'">
+          <div class="modal-ingredient__title">
+            {{ modalModeIngredients === "add" ? 'Добавить ингредиент' : 'Редактировать ингредиент' }}
+          </div>
+
+          <label for="ingredient-image" class="ingredient-image">
+            Изображение
+            <FileDropUpload id="ingredient-image"
+              :modelValue="getImage('ingredient')"
+              @update:modelValue="val => setImage('ingredient', val, 0)"
+            />
+          </label>
+
+          <label for="ingredient-overlay-image" class="ingredient-overlay-image">
+            Изображение для конструктора
+            <FileDropUpload id="ingredient-overlay-image"
+              :modelValue="getImage('ingredient', 'overlay')"
+              @update:modelValue="val => setImage('ingredient', val, 'overlay')"
+            />
+          </label>
+
+          <label for="ingredient-image" class="ingredient-image">
+            Название
+            <input
+              v-model="ingredient.name"
+              type="text"
+              placeholder="Введите название"
+              class="input"
+            />
+          </label>
+
+          <label for="ingredient-image" class="ingredient-image">
+            Цена
+            <input
+                v-model="ingredient.price"
+                type="number"
+                placeholder="Введите цену"
+                class="input"
+            />
+          </label>
+
+          <button
+              class="modal-ingredient__button--gradient"
+              @click="modalModeIngredients==='add' ? createIngredient() : updateIngredient()"
+          >
+            {{ modalModeIngredients === 'add' ? 'Добавить' : 'Изменить' }}
+          </button>
+        </template>
+
+        <template v-else-if="modalModeIngredients === 'delete'">
+          <div class="modal-ingredient__title">
+            Удалить ингредиент {{ ingredient.name }}?
+          </div>
+          <p class="text-red" v-if="error">{{ error }}</p>
+          <div class="flex gap-5 justify-center">
+            <button @click="deleteIngredient" class="modal-ingredient__button--gradient">Удалить</button>
+            <button @click="closeModal" class="modal-ingredient__button--outline">Отмена</button>
+          </div>
+        </template>
+      </div>
     </div>
-    <div class="modal-ingredient modal-ingredient--active">sdaad</div>
   </div>
 </template>
 
@@ -474,7 +635,7 @@
     @apply grid md:grid-cols-2 sm:grid-cols-1 gap-5
 
 .product
-  @apply p-2 rounded-xl shadow flex flex-col gap-3
+  @apply p-2 rounded-xl shadow flex flex-col gap-3 bg-white
 
   &__image_wrapper
     @apply bg-none rounded-lg p-2
@@ -518,10 +679,11 @@
 
     &_btn
       @include button-orange-outline
+      @apply w-full
 
   &__button--gradient
     @include button-orange-gradient
-    @apply flex-1
+    @apply flex-1 w-full
 
   &__button--outline
     @include button-orange-outline
@@ -530,18 +692,59 @@
   &__available
     @apply flex gap-3 items-center
 
+.label-column
+  @apply flex flex-col items-start gap-0
+.label-row, .modal-product__controls
+  @apply flex items-center gap-2
+
 .ingredients
-  @apply w-2/5 bg-white p-4 rounded-3xl max-sm:w-full flex max-sm:flex-grow flex-col gap-3
+  @apply w-1/4 bg-white p-4 rounded-3xl max-sm:w-full flex max-sm:flex-grow flex-col gap-3
 
   &__btn--gradient
     @include button-orange-gradient
 
+  &__wrapper
+    @apply flex flex-col gap-3
+
+.modal-ingredient
+  label
+    @apply flex flex-col items-start gap-0
+
+.ingredient
+  @apply flex gap-2 items-center flex-wrap
+
+  &__img
+    @apply w-9 h-9
+
+  &__wrapper
+    @apply flex flex-col gap-2
+
+  .input
+    @apply w-full
+
 .closeModal
   @apply absolute top-1 -right-10;
 
+label
+  @apply flex gap-2 items-center
+
 input[type=number]
-  max-width: 60px
+  @apply flex-1
+
+select:focus-visible
+  outline: none
+
+select option
+  &:checked
+    @apply bg-orange
+    color: white
+
+  &:first-child
+    border: 0
 
 .not_available
   @apply bg-red bg-opacity-40
+
+option:hover
+  @apply bg-orange
 </style>

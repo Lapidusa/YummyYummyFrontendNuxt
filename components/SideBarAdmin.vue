@@ -3,7 +3,7 @@ import Logo from "@components/Logo.vue";
 </script>
 
 <template>
-  <div class="sidebar">
+  <aside class="sidebar">
     <Logo />
 
     <ul class="sidebar__list">
@@ -17,7 +17,7 @@ import Logo from "@components/Logo.vue";
       <NuxtLink to="/admin/profile" class="sidebar__link">Профиль</NuxtLink>
     </div>
 
-  </div>
+  </aside>
 </template>
 
 

@@ -1,36 +1,40 @@
 <script setup lang="ts">
-
 import SideBarAdmin from "@components/SideBarAdmin.vue";
-import {useUser} from "@composable/useUser";
-import { useRouter } from 'vue-router';
-const isLoading = ref<boolean>(false);
-const UseUser = useUser()
-const router = useRouter()
+import { useUser } from "@composable/useUser";
+import { useRouter } from "vue-router";
+
+const isLoading = ref(false);
+const UseUser = useUser();
+const router = useRouter();
 
 const validateToken = async () => {
   const res = await UseUser.fetchUser();
-  if (!res.result || res.user.role !== 4){
-    await router.push('/')
+  if (!res.result || res.user.role !== 4) {
+    await router.push("/");
   }
-}
+};
 
-onMounted(async ()=>{
+onMounted(async () => {
   await validateToken();
-  isLoading.value = true
-})
+  isLoading.value = true;
+});
 </script>
 
 <template>
-  <div v-if="isLoading" class="bg-background-secondary flex">
-    <SideBarAdmin></SideBarAdmin>
-    <div class="containerA">
-      <NuxtPage></NuxtPage>
+  <div
+      v-if="isLoading"
+      class="bg-background-secondary ml-[171px] h-screen"
+  >
+    <SideBarAdmin />
+    <div class="containerA flex-1">
+      <NuxtPage />
     </div>
   </div>
-  <div v-else >Сервер не отвечает</div>
+  <div v-else>Сервер не отвечает</div>
 </template>
 
 <style scoped lang="sass">
-  .containerA
-    @apply bg-lightGray min-h-screen w-full flex ml-[171px]
+.containerA
+  @apply bg-lightGray min-h-screen
+  width: calc(100vw - 171px)
 </style>
