@@ -199,6 +199,7 @@ onMounted(async () => {
                 v-for="(digit, i) in code"
                 :key="i"
                 v-model="code[i]"
+                type="number"
                 maxlength="1"
                 class="code-digit"
                 @input="focusNext(i)"
@@ -295,4 +296,8 @@ onMounted(async () => {
 
 .code-digit
   @apply  w-12 h-12 text-center border-2 rounded-xl border-orange
+input::-webkit-outer-spin-button, input::-webkit-inner-spin-button
+  -webkit-appearance: none
+  margin: 0
+
 </style>

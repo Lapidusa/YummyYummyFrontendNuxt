@@ -173,7 +173,7 @@
     <MapVisible v-if="activeCity"
                 :city="activeCity"
                 :zoom="10"
-                :store-items="storesByCity"/>
+                :store-items="storesByCity" class="map"/>
     <div
         v-if="modalModeCity !== 'none'"
         class="modal-city"
@@ -305,8 +305,13 @@
 
 .stores
   @apply flex justify-between items-center pb-5
+
 .wrapper
   @apply flex flex-col w-full
+  height: calc(100vh - 40px)
+
+.map
+  @apply rounded-lg
 .closeModal
   @apply absolute top-1 -right-10;
 </style>

@@ -9,6 +9,7 @@ const { updateUser } = useUser()
 const config = useRuntimeConfig()
 const userStore = useUserStore()
 const errorUpdate = ref<string>("");
+const successUpdate  = ref<string>("");
 const user = computed(() => userStore.user)
 
 const form = ref({
@@ -20,7 +21,6 @@ const form = ref({
 })
 
 const fillFormWithUser = (userData: any) => {
-  console.log(userData.phone_number)
   form.value.phone = userData.phone_number
   form.value.name = userData.name || ''
   form.value.email = userData.email || ''
@@ -44,7 +44,13 @@ const submitForm = async () => {
   if (form.value.date_of_birth) formData.append('date_of_birth', form.value.date_of_birth)
   if (form.value.image) formData.append('image', form.value.image)
   const res = await updateUser(formData);
-  if (!res.result){
+  if (res.result){
+    successUpdate.value = 'Данные успешно сохранены!';
+    setTimeout(() => {
+      successUpdate.value = "";
+    }, 3000);
+  }
+  else {
     errorUpdate.value = res.message;
   }
 }
@@ -68,6 +74,9 @@ onMounted(() =>{
     </div>
     <div class="profile__wrapper">
       <form class="profile__form" @submit.prevent="submitForm" enctype="multipart/form-data">
+        <transition name="fade-slide">
+          <p class="text-green p-2 bg-green bg-opacity-30 rounded-full" v-if="successUpdate.length !== 0">{{successUpdate}}</p>
+        </transition>
         <h1 class="profile__title">Личные данные</h1>
         <FileDropUpload
             :modelValue="form.image"
@@ -96,7 +105,7 @@ onMounted(() =>{
             <input class="profile__input" id="birthday" type="date" v-model="form.date_of_birth" />
           </div>
         </div>
-        <button class="profile__submit" type="submit">Сохранить</button>
+        <button class="profile__submit btn--gradient" type="submit">Сохранить</button>
       </form>
     </div>
   </div>
@@ -104,6 +113,7 @@ onMounted(() =>{
 
 
 <style scoped lang="sass">
+@use 'assets/styles/mixins' as *
 .profile
   @apply flex flex-col min-h-screen
   &__header
@@ -114,4 +124,25 @@ onMounted(() =>{
     @apply m-10 p-10 bg-white rounded-[50px] flex flex-col gap-3
   &__title
     @apply text-2xl
+
+.btn--gradient
+  @include button-orange-gradient
+
+.fade-slide-enter-active,
+.fade-slide-leave-active
+  transition: opacity 0.4s ease, max-height 0.4s ease, padding 0.4s ease, margin 0.4s ease;
+  overflow: hidden
+
+.fade-slide-enter-from,
+.fade-slide-leave-to
+  opacity: 0
+  max-height: 0
+  padding-top: 0
+  padding-bottom: 0
+  margin-bottom: 0
+
+.fade-slide-enter-to,
+.fade-slide-leave-from
+  opacity: 1
+  max-height: 1000px
 </style>

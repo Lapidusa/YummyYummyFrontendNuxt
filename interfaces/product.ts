@@ -1,3 +1,5 @@
+import type {IngredientInPizza} from "@interfaces/ingredient";
+
 export interface ProductResponse {
   name: string
   description: string
@@ -40,6 +42,27 @@ export enum TypeProduct {
   CONSTRUCTOR = 1,
   PIZZA = 2
 }
+export const ProductFieldLabels: Record<string, string> = {
+  name: 'Название',
+  description: 'Описание',
+  category_id: 'Категория',
+  is_available: 'Доступен',
+  type: 'Тип продукта',
+  variants: 'Варианты',
+};
+
+export const ProductVariant: Record<string, string> = {
+  size: 'Размер',
+  price: 'Цена',
+  weight: 'Вес',
+  calories: 'Калории',
+  proteins: 'Белки',
+  fats: 'Жиры',
+  carbohydrates: 'Углеводы',
+  is_available: 'Доступен',
+  image: 'Изображение',
+  image_url: 'URL изображения',
+};
 
 export const ProductFieldLabels: Record<string, string> = {
   name: 'Название',
@@ -72,13 +95,6 @@ export const TypeProductLabels: Record<TypeProduct, string> = {
 export const TypeDoughLabels: Record<Dough, string> = {
   [Dough.THICK_DOUGH]: 'Традиционное тесто',
   [Dough.THIN_DOUGH]: 'Тонкое тесто',
-}
-
-export interface IngredientInPizza {
-  id: string
-  name: string
-  image: File | string | null
-  is_deleted?: boolean
 }
 
 export const createEmptyProduct = () :Product => ({
@@ -114,11 +130,4 @@ export const createEmptyProductVariant = () :ProductVariant => ({
   carbohydrates: 5,
   is_available: true,
   image: new File([], ''),
-})
-
-export const createEmptyIngredient = ():IngredientInPizza=>({
-  id: '',
-  name: '',
-  image: new File([], ''),
-  is_deleted: false
 })
