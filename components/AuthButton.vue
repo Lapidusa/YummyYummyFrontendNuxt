@@ -2,6 +2,7 @@
 import { ref, defineEmits, nextTick, onMounted} from 'vue'
 import {useAuth} from "@composable/useAuth";
 import {useUser} from "@composable/useUser";
+import {useRouter} from "vue-router";
 
 const emit = defineEmits<{
   (e: 'update:isAuthorized', value: boolean): void
@@ -17,6 +18,7 @@ const userPhoneNumber = ref('')
 const code = ref(['', '', '', '','',''])
 const error = ref(false)
 
+const router = useRouter()
 const Auth = useAuth()
 const UseUser = useUser()
 
@@ -66,19 +68,16 @@ const startCloseDropdown = () => {
 const handleKey = (event: KeyboardEvent, index: number) => {
   const target = event.target as HTMLInputElement
 
-  // Если нажали Backspace и поле пустое — фокус на предыдущее
   if (event.key === 'Backspace' && code.value[index] === '' && index > 0) {
     const prev = document.querySelectorAll('.code-digit')[index - 1] as HTMLInputElement
     prev?.focus()
   }
 
-  // Если нажали стрелку влево
   if (event.key === 'ArrowLeft' && index > 0) {
     const prev = document.querySelectorAll('.code-digit')[index - 1] as HTMLInputElement
     prev?.focus()
   }
 
-  // Если нажали стрелку вправо
   if (event.key === 'ArrowRight' && index < code.value.length - 1) {
     const next = document.querySelectorAll('.code-digit')[index + 1] as HTMLInputElement
     next?.focus()
@@ -109,8 +108,10 @@ const LogOut = async () => {
     isRole.value = 0
     emit('update:isAuthorized', false)
     emit('update:role', 0)
+    await router.push('/')
   }
 }
+
 onMounted(async () => {
   const token = localStorage.getItem('token');
   if (token) {
@@ -174,7 +175,7 @@ onMounted(async () => {
 
           <p v-show="error" class="modal__error">Введите полный номер</p>
 
-          <button @click="sendCode()" class="modal__btn" @keyup.enter="sendCode()">
+          <button type="submit" class="modal__btn" @keyup.enter="sendCode()">
             <p class="modal__btn-text">Получить код в SMS</p>
           </button>
 
@@ -184,8 +185,8 @@ onMounted(async () => {
         </form>
       </template>
 
-      <form v-else-if="step === 2">
-        <div @submit.prevent="LogIn" class="modal modal--active">
+      <form v-else-if="step === 2" @submit.prevent="LogIn">
+        <div class="modal modal--active">
           <div class="modal__top">
             <div class="modal__text">
               <h2 class="modal__title text-xl">Вход в аккаунт</h2>
@@ -199,8 +200,10 @@ onMounted(async () => {
                 v-for="(digit, i) in code"
                 :key="i"
                 v-model="code[i]"
-                type="number"
+                type="text"
+                inputmode="numeric"
                 maxlength="1"
+                pattern="\d"
                 class="code-digit"
                 @input="focusNext(i)"
                 @keydown="handleKey($event, i)"
@@ -209,12 +212,12 @@ onMounted(async () => {
           <div v-if="error" class="modal__error text-red">
             <p class="text-center py-2">Неверный код или срок действия кода истёк</p>
           </div>
-          <button @click="LogIn" class="modal__btn btnLogIn w-full justify-center">
+          <button type="submit" class="modal__btn btnLogIn w-full justify-center">
             <p class="btnLogIn__text">Войти</p>
           </button>
-          <div @click="closeModal" type="button" class="modal__close cursor-pointer">
+          <button @click="closeModal" class="modal__close cursor-pointer">
             <img class="closeModal" src="../assets/icons/closeWhite.svg" alt="" />
-          </div>
+          </button>
         </div>
       </form>
     </div>

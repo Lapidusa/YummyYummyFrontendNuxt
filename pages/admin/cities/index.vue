@@ -7,7 +7,7 @@
   import {validateEmptyFieldsByLabels} from "@/utils/validators";
 
   const MapVisible = defineAsyncComponent(() =>
-    process.client ? import('@components/MapVisible.vue') : Promise.resolve({})
+    process.client ? import('@components/maps/MapVisible.vue') : Promise.resolve({})
   )
 
   const UseCity = useCity()
@@ -72,7 +72,7 @@
     const res = await UseCity.addCity({ name: editableCity.value.name });
     if (res.result) {
       modalModeCity.value = "none";
-      allCities.value = await UseCity.getAllCity();
+      allCities.value = await UseCity.getAllCities();
       cityStore.initCityFromStorage();
       activeCity.value = res.city;
       editableCity.value = {name: ''};
@@ -88,7 +88,7 @@
     const res = await UseCity.addCity({ name: editableCity.value.name, id: activeCity.value?.id })
     if (res.result) {
       modalModeCity.value = "none"
-      allCities.value = await UseCity.getAllCity()
+      allCities.value = await UseCity.getAllCities()
       cityStore.initCityFromStorage()
       activeCity.value = city.value;
       editableCity.value = {name: ''};
@@ -101,7 +101,7 @@
       const res = await UseCity.deleteCity(activeCity.value.id)
       if (res.result) {
         modalModeCity.value = "none"
-        allCities.value = await UseCity.getAllCity()
+        allCities.value = await UseCity.getAllCities()
         activeCity.value = allCities.value.cities[0];
         cityStore.setCity(allCities.value.cities[0]);
         error.value = '';
@@ -125,7 +125,7 @@
   })
 
   onMounted(async () => {
-    allCities.value = await UseCity.getAllCity()
+    allCities.value = await UseCity.getAllCities()
     cityStore.initCityFromStorage()
     activeCity.value = city.value;
     if (!activeCity.value) {

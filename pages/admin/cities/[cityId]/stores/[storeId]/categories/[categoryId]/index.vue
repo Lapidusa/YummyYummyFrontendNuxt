@@ -1,16 +1,15 @@
   <script setup lang="ts">
   import {
     createEmptyPizza,
-    createEmptyProduct, createEmptyProductVariant,
+    createEmptyProduct, createEmptyProductVariant, Dough,
     type Pizza,
-    type Product, ProductFieldLabels, ProductVariant, TypeProduct, TypeProductLabels,
+    type Product, ProductFieldLabels, ProductVariantLabels, TypeProduct, TypeProductLabels,
   } from "@interfaces/product";
   import {
     createEmptyIngredient, type IngredientResponse, IngredientInPizzaLabels, type Ingredient
   } from "@interfaces/ingredient";
   import { useRoute } from "#imports";
   import { type Category } from "@interfaces/category";
-  import ToggleInputYesOrNo from "@components/ToggleInputYesOrNo.vue";
   import { useCategory } from "@composable/useCategory";
   import { useProduct } from "@composable/useProduct";
   import { useIngredient } from "@composable/useIngredient";
@@ -21,11 +20,11 @@
   const UseCategory = useCategory()
   const UseIngredient = useIngredient()
   const categoryId = computed(() => route.params.categoryId);
-
+  const selectedIngredients = ref<Ingredient[]>([]);
   const modalMode = ref<'none' | 'add' | 'update'| 'delete'>('none')
   const modalModeIngredients = ref<'none' | 'add' | 'update'| 'delete'>('none')
-
   const error = ref<string>('')
+  const dropdownOpen = ref<boolean>(false)
 
   const product = reactive<Product>(createEmptyProduct());
   const pizza = reactive<Pizza>(createEmptyPizza());
@@ -50,14 +49,14 @@
     if(type === 'product') {
       const errorMessageProduct = validateEmptyFieldsByLabels(product, ProductFieldLabels)
       if (product.type === 0){
-        const errorMessageVariant = validateEmptyFieldsByLabels(product.variants, ProductVariant)
+        const errorMessageVariant = validateEmptyFieldsByLabels(product.variants, ProductVariantLabels)
         if (errorMessageProduct || errorMessageVariant) {
           error.value = "Заполните обязательные поля: -" + errorMessageProduct! + " у варианта: -" + errorMessageVariant!;
           return false
         }
 
       }else if (product.type === 2){
-        const errorMessageVariant = validateEmptyFieldsByLabels(pizza.variants, ProductVariant)
+        const errorMessageVariant = validateEmptyFieldsByLabels(pizza.variants, ProductVariantLabels)
         if (errorMessageProduct || errorMessageVariant) {
           error.value = "Заполните обязательные поля: -" + errorMessageProduct! + " у варианта: -" + errorMessageVariant!;
           return false
@@ -220,6 +219,7 @@
       error.value = res.message || 'Ошибка при удалении продукта';
     }
   }
+
   const upsertItem = async (
     type: 'product' | 'pizza' | 'ingredient',
     action: 'add' | 'remove',
@@ -268,6 +268,7 @@
         throw new Error('Unknown type');
     }
   };
+
   const getImage = (type: 'product' | 'ingredient', indexOrField?: number | "overlay"): File | string | null => {
     if (type === 'product' && typeof indexOrField === 'number') {
       const variant = product.type === 0 ? product.variants[indexOrField] : pizza.variants[indexOrField];
@@ -309,6 +310,67 @@
     if (!product.variants.length) return null
     return Math.min(...product.variants.map(v=>v.price))
   }
+
+  function isSelected(ingredient: Ingredient) {
+    return selectedIngredients.value.some((i) => i.id === ingredient.id);
+  }
+
+  function toggleIngredient(ingredient: Ingredient) {
+    const idx = selectedIngredients.value.findIndex((i) => i.id === ingredient.id);
+    if (idx >= 0) {
+      removeIngredient(idx);
+    } else {
+      selectedIngredients.value.push({ ...ingredient, is_deleted: false });
+    }
+  }
+
+  function removeIngredient(index: number) {
+    selectedIngredients.value.splice(index, 1);
+  }
+
+  function copyProductToPizza(src: Product, dest: Pizza) {
+    dest.id = src.id;
+    dest.name = src.name;
+    dest.description = src.description;
+    dest.category_id = src.category_id;
+    dest.is_available = src.is_available;
+    dest.variants = src.variants.map(v => ({ ...v }));
+    dest.dough = Dough.THICK_DOUGH;
+    dest.ingredients = [];
+  }
+
+  function copyPizzaToProduct(src: Pizza, dest: Product) {
+    dest.id = src.id;
+    dest.name = src.name;
+    dest.description = src.description;
+    dest.category_id = src.category_id;
+    dest.is_available = src.is_available;
+    dest.variants = src.variants.map(v => ({ ...v }));
+  }
+
+  watch(()=>product.type,(newType, oldType)=>{
+    if (oldType === TypeProduct.GROUP && newType === TypeProduct.PIZZA) {
+      copyProductToPizza(product, pizza);
+    }
+    else if (oldType === TypeProduct.PIZZA && newType === TypeProduct.GROUP) {
+      copyPizzaToProduct(pizza, product);
+    }
+  });
+
+  watch(
+      () => selectedIngredients.value,
+      (newList) => {
+        pizza.ingredients = newList.map((i) => ({
+          id: i.id,
+          is_deleted: i.is_deleted,
+          name: i.name,
+          image: i.image,
+          overlay_image: i.overlay_image,
+          price: i.price,
+        }));
+      },
+      { deep: true }
+  );
 
   onMounted(async () => {
     await initialData();
@@ -356,8 +418,6 @@
         <div class="ingredient" v-if="ingredients.length !== 0" v-for="ingredient in ingredients">
           <img class="ingredient__img" :src="`${config.public.serverUrl}${ingredient.image}`" alt="Изображение">/
           <img class="ingredient__img" :src="`${config.public.serverUrl}${ingredient.overlay_image}`" alt="Изображение для конструтора">
-          <p class="ingredient__text">{{ingredient.name}}</p>
-          <p class="ingredient__text">{{ingredient.price}}₽</p>
           <div class="ingredient__down-actions">
             <button class="ingredient__down-btn view-product__btn--update" @click="openModal('update', false, ingredient)">
               <img src="@assets/icons/update.svg" alt="update" />
@@ -366,6 +426,9 @@
               <img src="@assets/icons/delete.svg" alt="delete" />
             </button>
           </div>
+          <p class="ingredient__text">{{ingredient.name}}</p>
+          <p class="ingredient__text">{{ingredient.price}} ₽</p>
+
         </div>
         <p v-else>Нет доступных ингредиентов</p>
       </div>
@@ -406,12 +469,10 @@
             <div class="modal-product__controls">
               <div class="modal-product__type-product">
                 <label>Тип продукта
-                  <select v-model="product.type" class="select" onfocus="this.size=3;"
-                          onblur="this.size=0;"
-                          onchange="this.size=3; this.blur();">
-                    <option :value="TypeProduct.GROUP">{{ TypeProductLabels[TypeProduct.GROUP] }}</option>
-                    <option :value="TypeProduct.PIZZA">{{ TypeProductLabels[TypeProduct.PIZZA] }}</option>
-                    <option :value="TypeProduct.CONSTRUCTOR">{{ TypeProductLabels[TypeProduct.CONSTRUCTOR] }}</option>
+                  <select v-model="product.type" class="select">
+                    <option :value="TypeProduct.GROUP">📂 {{ TypeProductLabels[TypeProduct.GROUP] }}</option>
+                    <option :value="TypeProduct.PIZZA">🍕 {{ TypeProductLabels[TypeProduct.PIZZA] }}</option>
+                    <option :value="TypeProduct.CONSTRUCTOR">🔧 {{ TypeProductLabels[TypeProduct.CONSTRUCTOR] }}</option>
                   </select>
                 </label>
               </div>
@@ -429,14 +490,80 @@
               </button>
             </div>
             <div v-if="product.type === 2" class="modal-product__add-ingredient">
+              <div
+                  v-if="selectedIngredients.length"
+                  class="flex flex-wrap gap-2 mb-4"
+              >
+      <span
+          v-for="(ing, idx) in selectedIngredients"
+          :key="ing.id"
+          class="flex items-center bg-gray-200 rounded-full px-3 py-1 text-sm"
+      >
+        <img
+            :src="`${config.public.serverUrl}${ing.image}`"
+            :alt="ing.name"
+            class="w-6 h-6 rounded-full mr-1"
+        />
+        {{ ing.name }}
 
-              <button class="modal-ingredient__button--gradient" @click="upsertItem('ingredient','add')">Добавить ингредиент</button>
-              <div v-for="(ingredient, index) in pizza.ingredients" class="modal-product__add-ingredient_wrapper">
-                {{ingredient}}
-                <label :for="'ingredient-deleted'" class="flex gap-3 items-center">
-                  Удаляемый пользователем в пицце
-                  <ToggleInputYesOrNo id="ingredient-deleted" v-model="pizza.ingredients[index].is_deleted"/>
-                </label>
+        <button
+            @click="removeIngredient(idx)"
+            class="ml-1 text-gray-600 hover:text-gray-900"
+            aria-label="Удалить ингредиент"
+        >
+          &times;
+        </button>
+
+        <label class="ml-2 flex items-center text-xs">
+          Удаляемый?
+          <ToggleInputYesOrNo
+              v-model="ing.is_deleted"
+              class="ml-1"
+          />
+        </label>
+          </span>
+              </div>
+              <div class="relative inline-block">
+                <button
+                    @click="dropdownOpen = !dropdownOpen"
+                    type="button"
+                    class="modal-ingredient__button--gradient"
+                >
+                  Добавить ингредиент
+                </button>
+
+                <div
+                    v-show="dropdownOpen"
+                    class="absolute z-10 mt-2 w-64 bg-white border border-gray-300 rounded shadow-lg max-h-60 overflow-auto"
+                >
+                  <ul>
+                    <li
+                        v-for="ing in ingredients"
+                        :key="ing.id"
+                        class="flex items-center px-3 py-2 hover:bg-gray-100 cursor-pointer"
+                        @click="toggleIngredient(ing)"
+                    >
+                      <input
+                          type="checkbox"
+                          class="form-checkbox h-4 w-4 text-blue-600"
+                          :checked="isSelected(ing)"
+                          readonly
+                      />
+                      <img
+                          :src="`${config.public.serverUrl}${ing.image}`"
+                          :alt="ing.name"
+                          class="w-6 h-6 rounded-full ml-2 mr-2"
+                      />
+                      <span class="text-gray-800">{{ ing.name }}</span>
+                    </li>
+                    <li
+                        v-if="!ingredients.length"
+                        class="px-3 py-2 text-gray-500"
+                    >
+                      Нет доступных ингредиентов
+                    </li>
+                  </ul>
+                </div>
               </div>
             </div>
           </div>
@@ -629,9 +756,13 @@
 
   &__btn--gradient
     @include button-orange-gradient
+    @apply max-sm:w-full
 
   &__wrapper
-    @apply grid md:grid-cols-2 sm:grid-cols-1 gap-5
+    @apply grid md:grid-cols-3 sm:grid-cols-2 gap-5
+
+  &__container
+    @apply flex flex-col gap-2
 
 .product
   @apply p-2 rounded-xl shadow flex flex-col gap-3 bg-white
@@ -665,10 +796,12 @@
     @apply flex flex-col gap-4
 
   &__columns
-    @apply flex gap-4
+    @apply flex gap-4 overflow-auto
 
   &__column
     @apply flex flex-col gap-4 flex-shrink-0
+    &:first-child
+      @apply  max-w-96
 
   &__add-variant
     @apply flex gap-4
@@ -691,13 +824,20 @@
   &__available
     @apply flex gap-3 items-center
 
+  &__add-ingredient
+    @apply w-full
+
+    &_wrapper
+      @apply flex items-center gap-2
+
 .label-column
   @apply flex flex-col items-start gap-0
+
 .label-row, .modal-product__controls
   @apply flex items-center gap-2
 
 .ingredients
-  @apply w-1/4 bg-white p-4 rounded-3xl max-sm:w-full flex max-sm:flex-grow flex-col gap-3
+  @apply w-2/4 bg-white p-4 rounded-3xl max-sm:w-full flex max-sm:flex-grow flex-col gap-3
 
   &__btn--gradient
     @include button-orange-gradient
@@ -721,6 +861,9 @@
   .input
     @apply w-full
 
+  &__down-actions
+    @apply flex gap-2
+
 .closeModal
   @apply absolute top-1 -right-10;
 
@@ -729,9 +872,11 @@ label
 
 input[type=number]
   @apply flex-1
+select
+  @apply p-2
 
-select:focus-visible
-  outline: none
+  &:focus-visible
+    @apply outline-orange rounded-full
 
 select option
   &:checked

@@ -39,13 +39,41 @@ watch(
 
 <template>
   <Header />
-  <main class="main">
-    <div class="main__container">
+  <!-- «Прилипший» под шапкой див -->
+  <div class="main__subheader container">
+    <div class="main__categories">
+      <div class="main_category" v-for="category in categories">
 
+      </div>
+    </div>
+    <div class="main__cart">
+      <button class="main__cart-btn btn--gradient">
+        Корзина
+      </button>
+    </div>
+  </div>
+
+  <main class="main__container">
+    <div class="main__container mt-96">
+      sdlasd
+    </div>
+    <div class="main__container mt-96">
+      sdlasd
     </div>
   </main>
 </template>
 <style lang="sass">
+@use 'assets/styles/mixins' as *
 .main
-  @apply w-full
+  padding: 34px
+
+  &__subheader
+    @apply sticky top-0 bg-white bg-opacity-10 backdrop-blur-2xl
+    @apply flex justify-between
+
+.container
+  @apply p-[34px]
+
+.btn--gradient
+  @include button-orange-gradient
 </style>

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, nextTick, watch } from 'vue'
-import { Dough, TypeDoughLabels } from '@/interfaces/product'
+import { Dough, TypeDoughLabels } from '@interfaces/product'
 
 const modelValue = defineModel<Dough>()
 

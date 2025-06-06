@@ -3,7 +3,7 @@ export interface IngredientResponse {
   image: File | string | null
   overlay_image: File | string | null
   price: number
-  is_deleted?: boolean
+  is_deleted: boolean
 }
 
 export interface Ingredient extends IngredientResponse{
@@ -25,6 +25,7 @@ export const createEmptyIngredientResponse = ():IngredientResponse=>({
   image: new File([], ''),
   overlay_image: new File([], ''),
   price: 0,
+  is_deleted: false,
 })
 
 export const createEmptyIngredient = ():Ingredient=>({
@@ -33,4 +34,5 @@ export const createEmptyIngredient = ():Ingredient=>({
   image: new File([], ''),
   overlay_image: new File([], ''),
   price: 0,
+  is_deleted: false,
 })

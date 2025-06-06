@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import {Dough} from "@interfaces/product";
-
 const modelValue = defineModel<boolean>()
 
 </script>
@@ -25,7 +23,7 @@ const modelValue = defineModel<boolean>()
 
   &__knobs
     @apply absolute top-[6px] left-[10px] w-6 h-6 bg-center bg-no-repeat bg-contain transition-all duration-300 ease-in
-    background-image: url('@assets/icons/dim-pizza.svg')
+    background-image: url('@icons/dim-pizza.svg')
     z-index: 1
 
   &__layer
@@ -35,7 +33,7 @@ const modelValue = defineModel<boolean>()
   &.checked
     .toggle__knobs
       left: 40px
-      background-image: url('@assets/icons/color-pizza.svg')
+      background-image: url('@icons/color-pizza.svg')
 
     .toggle__layer
       background-color: #fde7c5

@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import {useUser} from "@composable/useUser";
 import {useUserStore} from "@store/user";
 import { useRouter } from 'vue-router'
+import type {User} from "@interfaces/user";
 
 const router = useRouter()
 const { updateUser } = useUser()
@@ -10,39 +11,40 @@ const config = useRuntimeConfig()
 const userStore = useUserStore()
 const errorUpdate = ref<string>("");
 const successUpdate  = ref<string>("");
-const user = computed(() => userStore.user)
 
-const form = ref({
-  phone: undefined as string | undefined,
-  name: undefined as string | undefined,
-  email: undefined as string | undefined,
-  date_of_birth: undefined as string | undefined,
-  image: null as File | null,
+const user = computed<User | null>(() => userStore.user)
+
+const form = reactive({
+  phone: '' as string,
+  name: '' as string,
+  email: '' as string,
+  date_of_birth: '' as string,
+  image: null as File | string | null,
 })
 
 const fillFormWithUser = (userData: any) => {
-  form.value.phone = userData.phone_number
-  form.value.name = userData.name || ''
-  form.value.email = userData.email || ''
-  form.value.date_of_birth = userData.date_of_birth?.split('T')[0] || ''
-  form.value.image = userData.image_url || ''
+  form.phone = userData.phone_number
+  form.name = userData.name || ''
+  form.email = userData.email || ''
+  form.date_of_birth = userData.date_of_birth
+      ? userData.date_of_birth.split('T')[0]
+      : ''
+  form.image = userData.image_url || ''
 }
 
-const handleFileUpload = (event: Event) => {
-  const files = (event.target as HTMLInputElement).files
-  if (files && files.length > 0) {
-    form.value.image = files[0]
-  }
-}
 const stripPhone = (masked: string = '') => masked.replace(/\D/g, '')
 
 const submitForm = async () => {
   const formData = new FormData()
-  if (form.value.phone) formData.append('phone_number', stripPhone(form.value.phone))
-  if (form.value.name) formData.append('name', form.value.name)
-  if (form.value.email) formData.append('email', form.value.email)
-  if (form.value.date_of_birth) formData.append('date_of_birth', form.value.date_of_birth)
-  if (form.value.image) formData.append('image', form.value.image)
+  if (form.phone) formData.append('phone_number', stripPhone(form.phone))
+  if (form.name) formData.append('name', form.name)
+  if (form.email) formData.append('email', form.email)
+  if (form.date_of_birth) formData.append('date_of_birth', form.date_of_birth)
+  if (form.image) {
+    if (typeof form.image !== 'string') {
+      formData.append('image', form.image)
+    }
+  }
   const res = await updateUser(formData);
   if (res.result){
     successUpdate.value = 'Данные успешно сохранены!';
@@ -51,7 +53,7 @@ const submitForm = async () => {
     }, 3000);
   }
   else {
-    errorUpdate.value = res.message;
+    errorUpdate.value = res.message || 'Ошибка при обновлении';
   }
 }
 
@@ -65,6 +67,15 @@ onMounted(() =>{
     fillFormWithUser(user.value)
   }
 })
+
+watch(
+    () => user.value,
+    (newUser) => {
+      if (newUser) {
+        fillFormWithUser(newUser)
+      }
+    }
+)
 </script>
 
 <template>
@@ -78,13 +89,14 @@ onMounted(() =>{
           <p class="text-green p-2 bg-green bg-opacity-30 rounded-full" v-if="successUpdate.length !== 0">{{successUpdate}}</p>
         </transition>
         <h1 class="profile__title">Личные данные</h1>
-        <FileDropUpload
-            :modelValue="form.image"
-            @update:modelValue="form.image = $event"
-        />
+
         <div class="profile__field">
           <label class="profile__label" for="avatar">Аватар</label>
-          <input class="profile__input" id="avatar" type="file" accept="image/*" @change="handleFileUpload" />
+
+          <FileDropUpload
+              :modelValue="form.image"
+              @update:modelValue="form.image = $event"
+          />
         </div>
 
         <PhoneNumber v-model="form.phone" />
@@ -130,7 +142,7 @@ onMounted(() =>{
 
 .fade-slide-enter-active,
 .fade-slide-leave-active
-  transition: opacity 0.4s ease, max-height 0.4s ease, padding 0.4s ease, margin 0.4s ease;
+  transition: opacity 0.4s ease, max-height 0.4s ease, padding 0.4s ease, margin 0.4s ease
   overflow: hidden
 
 .fade-slide-enter-from,

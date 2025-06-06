@@ -47,8 +47,6 @@
 
       const [lat, lng] = store.point.map(Number)
 
-      if (typeof lat !== 'number' || typeof lng !== 'number') continue;
-
       const popupContent = `
         <div>
           <strong>${store.address}</strong>
@@ -60,9 +58,9 @@
       `
       const pizzaIcon = L.icon({
         iconUrl: '/icons/pizza.svg', // путь к файлу
-        iconSize: [30, 40],               // размер иконки
-        iconAnchor: [15, 40],             // точка "основания" маркера
-        popupAnchor: [0, -40],            // отступ попапа
+        iconSize: [30, 40],          // размер иконки
+        iconAnchor: [15, 40],        // точка "основания" маркера
+        popupAnchor: [0, -40],       // отступ попапа
       })
 
       const marker = L.marker([lat, lng], {
@@ -106,15 +104,13 @@
         })
       }
     })
+
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '© OpenStreetMap',
     }).addTo(m)
 
     m.addLayer(drawnItems)
 
-    // nextTick(() => {
-    //   map.value!.invalidateSize()
-    // })
     renderStoreItems(props.storeItems)
   })
 </script>

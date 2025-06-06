@@ -129,7 +129,7 @@
   }
 
   onMounted(async () => {
-    allCities.value = await UseCity.getAllCity()
+    allCities.value = await UseCity.getAllCities()
     cityStore.initCityFromStorage()
 
     activeCity.value = city.value;
@@ -164,70 +164,6 @@
       </AuthButton>
     </div>
   </div>
-
-<!--  <div-->
-<!--  id="static-modal" data-modal-backdrop="static"-->
-<!--  aria-hidden="true"-->
-<!--  :class="{'hidden': !isModalOpen, 'modal-header': isModalOpen}"-->
-<!--  >-->
-<!--    <template v-if="!changeModal">-->
-<!--      <div class="modal-header modal-header&#45;&#45;active">-->
-<!--        <div class="modal-header__top">-->
-<!--          <div class="modal-header__text">-->
-<!--            <h2 class="modal-header__title">Вход в аккаунт</h2>-->
-<!--            <p class="modal-header__description">-->
-<!--              Введите номер телефона, чтобы войти или зарегистрироваться-->
-<!--            </p>-->
-<!--          </div>-->
-<!--          <div class="modal-header__img"></div>-->
-<!--        </div>-->
-
-<!--        <PhoneNumber v-model="userPhoneNumber" />-->
-
-<!--        <p v-show="error" class="modal-header__error">Введите полный номер</p>-->
-
-<!--        <button @click="sendCode()" class="modal-header__btn">-->
-<!--          <p class="modal-header__btn-text">Получить код в SMS</p>-->
-<!--        </button>-->
-
-<!--        <div @click="closeModal" type="button" class="modal-header__close cursor-pointer">-->
-<!--          <img class="closeModal" src="../assets/icons/closeWhite.svg" alt="" />-->
-<!--        </div>-->
-<!--      </div>-->
-<!--    </template>-->
-
-<!--    <div v-else>-->
-<!--      <div class="modal-header modal-header&#45;&#45;active">-->
-<!--        <div class="modal-header__top">-->
-<!--          <div class="modal-header__text">-->
-<!--            <h2 class="modal-header__title text-xl">Вход в аккаунт</h2>-->
-<!--            <p class="modal-header__description">Введите СМС-код</p>-->
-<!--          </div>-->
-<!--          <div class="modal-header__img"></div>-->
-
-<!--        </div>-->
-<!--        <div class="modal-header__otp otp-container flex items-center justify-center gap-4">-->
-<!--          <input type="text" maxlength="1" class="otp-input" v-model="code[0]" @input="moveFocus({event : $event, direction : 1})" />-->
-<!--          <input type="text" maxlength="1" class="otp-input" v-model="code[1]" @input="moveFocus({event : $event, direction : 1})" />-->
-<!--          <input type="text" maxlength="1" class="otp-input" v-model="code[2]" @input="moveFocus({event : $event, direction : 1})" />-->
-<!--          <input type="text" maxlength="1" class="otp-input" v-model="code[3]" @input="moveFocus({event : $event, direction : 1})" />-->
-<!--          <input type="text" maxlength="1" class="otp-input" v-model="code[4]" @input="moveFocus({event : $event, direction : 1})" />-->
-<!--          <input type="text" maxlength="1" class="otp-input" v-model="code[5]" @input="moveFocus({event : $event, direction : 1})" />-->
-<!--        </div>-->
-<!--        <div v-if="error" class="modal-header__error text-red">-->
-<!--          <p class="text-center py-2">Неверный код или срок действия кода истёк</p>-->
-<!--        </div>-->
-<!--        <button @click="LogIn" class="modal-header__btn btnLogIn w-full justify-center">-->
-<!--          <p class="btnLogIn__text">Войти</p>-->
-<!--        </button>-->
-<!--        <div @click="closeModal" type="button" class="modal-header__close cursor-pointer">-->
-<!--          <img class="closeModal" src="../assets/icons/closeWhite.svg" alt="" />-->
-<!--        </div>-->
-<!--      </div>-->
-<!--    </div>-->
-<!--  </div>-->
-
-  <!-- Модалка выбора города -->
   <div
       id="static-modal" data-modal-backdrop="static"
       aria-hidden="true"
@@ -292,8 +228,7 @@
 @use 'assets/styles/mixins' as *
 
 .header
-  padding: 34px
-  @apply flex justify-between
+  @apply flex justify-between p-[34px]
 
   &__left
     @apply flex gap-5
@@ -354,6 +289,7 @@
 
 .closeModal
   @apply absolute top-1 -right-10;
+
 .otp-input
   width: 40px
   height: 40px

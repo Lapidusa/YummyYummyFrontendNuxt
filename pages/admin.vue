@@ -23,7 +23,7 @@ onMounted(async () => {
 <template>
   <div
       v-if="isLoading"
-      class="bg-background-secondary ml-[171px] h-screen"
+      class="bg-background-secondary ml-[157px] h-screen"
   >
     <SideBarAdmin />
     <div class="containerA flex-1">
@@ -36,5 +36,5 @@ onMounted(async () => {
 <style scoped lang="sass">
 .containerA
   @apply bg-lightGray min-h-screen
-  width: calc(100vw - 171px)
+  width: calc(100vw - 180px)
 </style>

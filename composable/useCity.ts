@@ -6,7 +6,7 @@ export const useCity = ()  =>{
   const api = useApi();
   const auth = useAuth();
 
-  const getAllCity = async () =>{
+  const getAllCities = async () =>{
     const res = await api.get('/city/all-cities/');
     return res.data;
   }
@@ -37,5 +37,5 @@ export const useCity = ()  =>{
     return res.data;
   }
 
-  return {getAllCity, getCityById, addCity, updateCity, deleteCity};
+  return {getAllCities, getCityById, addCity, updateCity, deleteCity};
 }

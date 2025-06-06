@@ -24,7 +24,13 @@ export default defineNuxtConfig({
     strict: true,
     shim: false,
   },
-
+  components: [
+    { path: '~/components', pathPrefix: false },
+    { path: '~/components/maps', pathPrefix: true },
+    { path: '~/components/inputs', pathPrefix: true },
+    { path: '~/components/layout', pathPrefix: true },
+    { path: '~/components/auth', pathPrefix: true },
+  ],
   devtools: { enabled: true },
   css: ['@/assets/styles/main.scss',
     'leaflet/dist/leaflet.css',

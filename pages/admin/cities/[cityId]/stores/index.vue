@@ -10,10 +10,10 @@
   import type {City} from "@interfaces/city";
 
   const MapEditable = defineAsyncComponent(() =>
-    process.client ? import('@components/MapEditable.vue') : Promise.resolve({})
+    process.client ? import('@components/maps/MapEditable.vue') : Promise.resolve({})
   )
   const MapVisible = defineAsyncComponent(() =>
-    process.client ? import('@components/MapVisible.vue') : Promise.resolve({})
+    process.client ? import('@components/maps/MapVisible.vue') : Promise.resolve({})
   )
 
   const route = useRoute();

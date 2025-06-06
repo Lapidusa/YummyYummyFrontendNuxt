@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref, watch, onBeforeUnmount } from 'vue'
+import {onBeforeUnmount, ref, watch} from 'vue'
+
 const config = useRuntimeConfig()
 const props = defineProps<{
   modelValue: File | string | null
@@ -19,11 +20,9 @@ watch(
   (file) => {
 
     if (file instanceof File) {
-      const objectUrl = URL.createObjectURL(file)
-      previewUrl.value = objectUrl
+      previewUrl.value = URL.createObjectURL(file)
     } else if (typeof file === 'string') {
       previewUrl.value = `${config.public.serverUrl}${file}`
-      console.log(previewUrl.value)// путь к изображению на сервере
     } else {
       previewUrl.value = null
     }

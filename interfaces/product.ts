@@ -13,20 +13,6 @@ export interface Product extends ProductResponse {
   id: string
 }
 
-export interface ProductVariant {
-  id: string
-  size: string
-  price: number
-  weight: number
-  calories: number
-  proteins: number
-  fats: number
-  carbohydrates: number
-  is_available: boolean
-  image: File | string | null
-  image_url?: string | null,
-}
-
 export enum Dough {
   THICK_DOUGH = 0,
   THIN_DOUGH = 1
@@ -42,27 +28,19 @@ export enum TypeProduct {
   CONSTRUCTOR = 1,
   PIZZA = 2
 }
-export const ProductFieldLabels: Record<string, string> = {
-  name: 'Название',
-  description: 'Описание',
-  category_id: 'Категория',
-  is_available: 'Доступен',
-  type: 'Тип продукта',
-  variants: 'Варианты',
-};
-
-export const ProductVariant: Record<string, string> = {
-  size: 'Размер',
-  price: 'Цена',
-  weight: 'Вес',
-  calories: 'Калории',
-  proteins: 'Белки',
-  fats: 'Жиры',
-  carbohydrates: 'Углеводы',
-  is_available: 'Доступен',
-  image: 'Изображение',
-  image_url: 'URL изображения',
-};
+export interface ProductVariant {
+  id: string
+  size: string
+  price: number
+  weight: number
+  calories: number
+  proteins: number
+  fats: number
+  carbohydrates: number
+  is_available: boolean
+  image: File | string | null
+  image_url: string | null
+}
 
 export const ProductFieldLabels: Record<string, string> = {
   name: 'Название',
@@ -73,7 +51,7 @@ export const ProductFieldLabels: Record<string, string> = {
   variants: 'Варианты',
 };
 
-export const ProductVariant: Record<string, string> = {
+export const ProductVariantLabels: Record<string, string> = {
   size: 'Размер',
   price: 'Цена',
   weight: 'Вес',
@@ -130,4 +108,5 @@ export const createEmptyProductVariant = () :ProductVariant => ({
   carbohydrates: 5,
   is_available: true,
   image: new File([], ''),
+  image_url: ''
 })
