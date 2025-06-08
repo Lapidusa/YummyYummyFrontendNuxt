@@ -11,8 +11,13 @@ export const useCity = ()  =>{
     return res.data;
   }
 
-  const getCityById = async (storeId: string) =>{
-    const res = await api.get(`/city/${storeId}`);
+  const getFullDataByCity = async (cityId: string) =>{
+    const res = await api.get(`/city/${cityId}/full`);
+    return res.data;
+  }
+
+  const getCityById = async (cityId: string) =>{
+    const res = await api.get(`/city/${cityId}`);
     return res.data;
   }
 
@@ -37,5 +42,5 @@ export const useCity = ()  =>{
     return res.data;
   }
 
-  return {getAllCities, getCityById, addCity, updateCity, deleteCity};
+  return {getAllCities, getFullDataByCity, getCityById, addCity, updateCity, deleteCity};
 }

@@ -116,11 +116,18 @@
 
       validateAndSetError('product');
 
-      const payload: Product = {
+      const payload = {
         ...product,
         category_id: categoryId.value,
-        variants: product.type === TypeProduct.PIZZA ? pizza.variants : product.variants
-      };
+        variants: product.type === TypeProduct.PIZZA ? pizza.variants : product.variants,
+        ...(product.type === TypeProduct.PIZZA && {
+          dough: Dough.THICK_DOUGH,
+          ingredients: pizza.ingredients.map((i) => ({
+            ingredient_id: i.id,
+            is_deleted: i.is_deleted ?? false,
+          })),
+        }),
+      } as Product;
 
       const res = await UseProduct.createProduct(payload);
 
@@ -143,12 +150,19 @@
       error.value = '';
       validateAndSetError('product')
 
-      const payload: Product = {
+      const payload = {
         ...product,
         category_id: categoryId.value,
-        variants: product.type === TypeProduct.PIZZA ? pizza.variants : product.variants
-      };
-      console.log(payload)
+        variants: product.type === TypeProduct.PIZZA ? pizza.variants : product.variants,
+        ...(product.type === TypeProduct.PIZZA && {
+          dough: Dough.THICK_DOUGH,
+          ingredients: pizza.ingredients.map((i) => ({
+            ingredient_id: i.id,
+            is_deleted: i.is_deleted ?? false,
+          })),
+        }),
+      } as Product;
+
       const res = await UseProduct.updateProduct(payload);
 
       if (res.result) {
@@ -228,7 +242,6 @@
   ) => {
     const itemTemplate = {
       product: createEmptyProductVariant(),
-      // ingredients: createEmptyIngredient(),
     };
     error.value = '';
     const max_variants = 3;
@@ -255,15 +268,6 @@
           error.value = 'Максимум могут быть 3 варианта';
         }
         break;
-
-      // case 'ingredient':
-      //   if (action === 'add') {
-      //     ingredient.value.push(data || itemTemplate.ingredient);
-      //   } else if (action === 'remove' && index !== undefined) {
-      //     ingredient.value.splice(index, 1);
-      //   }
-      //   break;
-
       default:
         throw new Error('Unknown type');
     }
@@ -298,6 +302,24 @@
         ingredient.image = file
       }
     }
+  }
+  function getStructure(ingredients: Ingredient[]): string {
+    const names = ingredients
+        .filter(item => !item.is_deleted && item.name)
+        .map(item => item.name.trim());
+
+    if (names.length === 0) return "";
+
+    const formatted = names.map((name, idx) => {
+      const first = name.charAt(0);
+      const rest = name.slice(1);
+      if (idx === 0) {
+        return first.toUpperCase() + rest;
+      } else {
+        return first.toLowerCase() + rest;
+      }
+    });
+    return formatted.join(", ");
   }
 
   function getDisplayVariant (product: Product) {
@@ -389,13 +411,14 @@
               <img
                 :src="`${config.public.serverUrl}${getDisplayVariant(product)!.image}`"
                 :alt="getDisplayVariant(product)!.size"
-                v-if="product.variants"
-                class="w-full aspect-square object-cover"
+                v-if="getDisplayVariant(product)"
+                class="w-full aspect-square object-contain"
               />
             </div>
             <div class="product__down">
               <div class="product__down-text">
                 <p>{{product.name}}</p>
+                <p class="main-category__product-text">{{product.type === TypeProduct.PIZZA && product.ingredients ? getStructure(product.ingredients) : product.description}}</p>
                 <p>от {{getMinPrice(product)}} ₽</p>
               </div>
               <div class="product__down-actions">
@@ -412,7 +435,7 @@
       </div>
       <div v-else class="empty-products">Нет продуктов</div>
     </div>
-    <div class="ingredients">
+    <div class="ingredients" v-if="category && category.type === 2">
       <button class="ingredients__btn ingredients__btn--gradient" @click="openModal('add',false)">Добавить ингредиент</button>
       <div class="ingredients__wrapper">
         <div class="ingredient" v-if="ingredients.length !== 0" v-for="ingredient in ingredients">
@@ -492,7 +515,7 @@
             <div v-if="product.type === 2" class="modal-product__add-ingredient">
               <div
                   v-if="selectedIngredients.length"
-                  class="flex flex-wrap gap-2 mb-4"
+                  class="flex flex-col gap-2 mb-4"
               >
       <span
           v-for="(ing, idx) in selectedIngredients"
@@ -523,7 +546,7 @@
         </label>
           </span>
               </div>
-              <div class="relative inline-block">
+              <div class="relative">
                 <button
                     @click="dropdownOpen = !dropdownOpen"
                     type="button"
@@ -534,9 +557,9 @@
 
                 <div
                     v-show="dropdownOpen"
-                    class="absolute z-10 mt-2 w-64 bg-white border border-gray-300 rounded shadow-lg max-h-60 overflow-auto"
+                    class="absolute z-10 mt-2 w-full bg-white border border-gray-300 rounded shadow-lg max-h-60 overflow-auto"
                 >
-                  <ul>
+                  <ul class="grid grid-cols-2">
                     <li
                         v-for="ing in ingredients"
                         :key="ing.id"
@@ -617,7 +640,7 @@
                     :modelValue="getImage('product', index)"
                     @update:modelValue="setImage('product', $event, index)"
                 />
-                <label :for="'pizza-size' + index" class="flex flex-col">
+                <label :for="'pizza-size' + index" class="flex flex-col items-baseline">
                   Название варианта:
                   <input class="modal-product__input" :id="'pizza-size' + index" type="text" v-model="pizza.variants[index].size" placeholder="Название варианта" />
                 </label>
@@ -800,8 +823,6 @@
 
   &__column
     @apply flex flex-col gap-4 flex-shrink-0
-    &:first-child
-      @apply  max-w-96
 
   &__add-variant
     @apply flex gap-4

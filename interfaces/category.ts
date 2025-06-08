@@ -1,8 +1,11 @@
+import type {Product} from "@interfaces/product";
+
 export interface CategoryRequest {
   name: string
   store_id: string
   is_available: boolean
   type: TypeCategory
+  products?: Product[]
 }
 
 export interface Category extends CategoryRequest {

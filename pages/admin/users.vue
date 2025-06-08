@@ -80,7 +80,6 @@
   }
   onMounted(async () => {
     await initData();
-    console.log(users.value)
   })
 </script>
 

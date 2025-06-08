@@ -9,9 +9,7 @@ export interface IngredientResponse {
 export interface Ingredient extends IngredientResponse{
   id: string
 }
-export interface IngredientInPizza extends Ingredient{
-  is_deleted: boolean
-}
+
 export const IngredientInPizzaLabels: Record<keyof IngredientResponse, string> = {
   name: 'Название',
   image: 'Изображение',

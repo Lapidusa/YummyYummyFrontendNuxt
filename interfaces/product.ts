@@ -1,4 +1,4 @@
-import type {IngredientInPizza} from "@interfaces/ingredient";
+import type {Ingredient} from "@interfaces/ingredient";
 
 export interface ProductResponse {
   name: string
@@ -7,6 +7,7 @@ export interface ProductResponse {
   is_available: boolean
   type: TypeProduct
   variants: ProductVariant[]
+  ingredients?: Ingredient[]
 }
 
 export interface Product extends ProductResponse {
@@ -20,7 +21,7 @@ export enum Dough {
 
 export interface Pizza extends Product {
   dough: Dough.THICK_DOUGH
-  ingredients: IngredientInPizza[]
+  ingredients: Ingredient[]
 }
 
 export enum TypeProduct {

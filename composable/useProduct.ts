@@ -67,11 +67,9 @@ export const useProduct = () => {
       ...productData,
       variants: mappedVariants,
     };
-    console.log(mappedVariants)
     formData.append("product_data_json", JSON.stringify(mappedData));
 
     productData.variants.forEach((v, index) => {
-      console.log(v.image)
       if (v.image instanceof File) {
         formData.append("images", v.image, `variant-${index}-${v.image.name}`);
       }
