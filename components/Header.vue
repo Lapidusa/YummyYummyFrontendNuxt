@@ -19,7 +19,10 @@
   const code = ref(['', '', '', '', '', '']);
 
   const searchTerm = ref<string>('');
-
+  const props = defineProps<{ isAuthorized: boolean }>()
+  const emit = defineEmits<{
+    (e: 'update:isAuthorized', value: boolean): void
+  }>()
   const Auth = useAuth()
   const UseUser = useUser()
   const UseCity = useCity()
@@ -58,6 +61,7 @@
 
     if(res.result) {
       isAuthorized.value = true;
+      emit('update:isAuthorized', true)
       changeModal.value = false;
       isModalOpen.value = false;
       error.value = false;
@@ -111,15 +115,12 @@
     switch(option) {
       case 'address':
         console.log('Пользователь выбрал указать адрес доставки')
-        // Ваша логика для адреса доставки
         break
       case 'pickup':
         console.log('Пользователь выбрал самовывоз из пиццерии')
-        // Логика для самовывоза
         break
       case 'login':
         console.log('Пользователь выбрал войти')
-        // Логика авторизации / перехода к логину
         break
     }
   }

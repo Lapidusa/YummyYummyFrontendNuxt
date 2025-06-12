@@ -35,21 +35,21 @@ export const useCategory = () => {
 
   const createCategory = async (category: CategoryRequest) => {
     const token = auth.getToken();
-    if (!token && category) return
+    if (!token || !category) return
     const res = await api.post(`/category/create-category/`, category, {headers: {token}});
     return res.data;
   }
 
   const updateCategory = async (category: Category) => {
     const token = auth.getToken();
-    if (!token && category) return
+    if (!token || !category) return
     const res = await api.put(`/category/${category.id}/`, category, {headers: {token}});
     return res.data;
   }
 
   const deleteCategory = async (categoryId: string) => {
     const token = auth.getToken();
-    if (!token && categoryId) return
+    if (!token || !categoryId) return
     const res = await api.delete(`/category/${categoryId}/`, {headers: {token}});
     return res.data;
   }

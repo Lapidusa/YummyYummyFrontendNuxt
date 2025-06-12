@@ -28,7 +28,7 @@ const modelValue = defineModel<boolean>()
 
   &__layer
     @apply absolute inset-0 w-full h-full transition-all duration-300 ease-in
-    background-color: #e2e8f0 // светло-серый
+    background-color: #e2e8f0
 
   &.checked
     .toggle__knobs

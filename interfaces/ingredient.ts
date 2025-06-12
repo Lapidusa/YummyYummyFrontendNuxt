@@ -9,7 +9,9 @@ export interface IngredientResponse {
 export interface Ingredient extends IngredientResponse{
   id: string
 }
-
+export interface IngredientWithQuantity extends Ingredient {
+  quantity: number
+}
 export const IngredientInPizzaLabels: Record<keyof IngredientResponse, string> = {
   name: 'Название',
   image: 'Изображение',

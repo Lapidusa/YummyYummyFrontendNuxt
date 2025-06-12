@@ -72,8 +72,8 @@ export const TypeProductLabels: Record<TypeProduct, string> = {
 }
 
 export const TypeDoughLabels: Record<Dough, string> = {
-  [Dough.THICK_DOUGH]: 'Традиционное тесто',
-  [Dough.THIN_DOUGH]: 'Тонкое тесто',
+  [Dough.THICK_DOUGH]: 'Традиционное',
+  [Dough.THIN_DOUGH]: 'Тонкое',
 }
 
 export const createEmptyProduct = () :Product => ({

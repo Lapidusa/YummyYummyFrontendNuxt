@@ -400,7 +400,7 @@
 </script>
 
 <template>
-  <div class="flex gap-3 max-sm:flex-col-reverse md:flex-row justify-between">
+  <div class="flex gap-3 sm:flex-col-reverse lg:flex-row justify-between">
     <div class="products">
       <button class="products__btn--gradient" @click="openModal('add', true)">Создать продукт</button>
       <div class="products__container" v-if="products.length > 0">
@@ -418,7 +418,7 @@
             <div class="product__down">
               <div class="product__down-text">
                 <p>{{product.name}}</p>
-                <p class="main-category__product-text">{{product.type === TypeProduct.PIZZA && product.ingredients ? getStructure(product.ingredients) : product.description}}</p>
+                <p>{{product.type === TypeProduct.PIZZA && product.ingredients ? getStructure(product.ingredients) : product.description}}</p>
                 <p>от {{getMinPrice(product)}} ₽</p>
               </div>
               <div class="product__down-actions">
@@ -775,14 +775,14 @@
 <style scoped lang="sass">
 @use 'assets/styles/mixins' as *
 .products
-  @apply flex flex-col gap-3 items-baseline
+  @apply flex flex-col gap-3 lg:items-start
 
   &__btn--gradient
     @include button-orange-gradient
     @apply max-sm:w-full
 
   &__wrapper
-    @apply grid md:grid-cols-3 sm:grid-cols-2 gap-5
+    @apply grid xl:grid-cols-3 lg:grid-cols-2 gap-5
 
   &__container
     @apply flex flex-col gap-2
@@ -797,8 +797,9 @@
     @apply flex justify-between items-center
 
     &-actions
-      @apply flex
-
+      @apply flex max-xl:flex-col shrink-0
+    &-text
+      @apply flex-1 min-w-0
     &-btn
       @apply p-2 hover:bg-white hover:shadow-sm rounded-full
 
@@ -858,7 +859,7 @@
   @apply flex items-center gap-2
 
 .ingredients
-  @apply w-2/4 bg-white p-4 rounded-3xl max-sm:w-full flex max-sm:flex-grow flex-col gap-3
+  @apply w-2/4 bg-white p-4 rounded-3xl md:w-full flex lg:flex-grow lg:max-w-96 flex-col gap-3
 
   &__btn--gradient
     @include button-orange-gradient
@@ -874,7 +875,7 @@
   @apply flex gap-2 items-center flex-wrap
 
   &__img
-    @apply w-9 h-9
+    @apply w-9 h-9 object-contain
 
   &__wrapper
     @apply flex flex-col gap-2

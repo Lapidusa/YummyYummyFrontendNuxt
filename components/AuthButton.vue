@@ -132,8 +132,8 @@ onMounted(async () => {
     <template v-else>
       <slot :isRole="isRole" :logOut="LogOut" />
     </template>
-    <div class="relative">
-      <NuxtLink to="/profile" v-if="isAuthorized" class="button button--outline"
+    <div class="relative" v-if="isAuthorized">
+      <NuxtLink to="/profile" class="button button--outline"
         @mouseenter="openDropdown" @mouseleave="startCloseDropdown">
         <div class="button--icon"></div>
         <p class="button-text">Профиль</p>
@@ -245,7 +245,7 @@ onMounted(async () => {
     @include button-orange-outline
 
 .modal
-  @apply fixed inset-0 bg-black bg-opacity-50 flex flex-col gap-3
+  @apply fixed inset-0 bg-black bg-opacity-50 flex flex-col gap-3 z-50
 
   &__search
     @apply relative
