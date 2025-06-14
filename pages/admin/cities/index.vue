@@ -5,6 +5,7 @@
   import {useStore} from "@composable/useStore";
   import type {Store} from "@interfaces/store";
   import {validateEmptyFieldsByLabels} from "@/utils/validators";
+  import CloseIcon from "@components/icons/closeIcon.vue";
 
   const MapVisible = defineAsyncComponent(() =>
     process.client ? import('@components/maps/MapVisible.vue') : Promise.resolve({})
@@ -183,7 +184,7 @@
     >
       <div class="modal-city modal-city--active">
         <div class="modal-city__close cursor-pointer" @click="closeModal">
-          <img class="closeModal" src="@assets/icons/closeWhite.svg" alt="Закрыть" />
+          <CloseIcon class="closeModal"/>
         </div>
         <div class="modal-city__container">
           <template v-if="modalModeCity === 'select'">

@@ -3,24 +3,25 @@ import { ref, defineEmits, nextTick, onMounted} from 'vue'
 import {useAuth} from "@composable/useAuth";
 import {useUser} from "@composable/useUser";
 import {useRouter} from "vue-router";
+import CloseIcon from "@components/icons/closeIcon.vue";
 
 const emit = defineEmits<{
-  (e: 'update:isAuthorized', value: boolean): void
+  (e: 'update:is-authorized', value: boolean): void
   (e: 'update:role', value: 0|1|2|3|4): void
 }>()
-const isDropdownOpen = ref<boolean>(false);
-const isAuthorized = ref(false)
-const isRole = ref<0 | 1 | 2 | 3 | 4>(0)
-const isModalOpen = ref(false)
-const step = ref(1)
+const UseUser = useUser()
+const Auth = useAuth()
+const router = useRouter()
 
+const isDropdownOpen = ref<boolean>(false);
+const isRole = ref<0 | 1 | 2 | 3 | 4>(0)
+const step = ref(1)
 const userPhoneNumber = ref('')
 const code = ref(['', '', '', '','',''])
 const error = ref(false)
-
-const router = useRouter()
-const Auth = useAuth()
-const UseUser = useUser()
+const isMobileMenuOpen = ref(false)
+const isAuthorized = ref(false)
+const isModalOpen = ref(false)
 
 const timeoutId = ref<ReturnType<typeof setTimeout>>();
 
@@ -59,6 +60,10 @@ const openDropdown = () => {
   isDropdownOpen.value = true;
 };
 
+const toggleMobileMenu = () => {
+  isMobileMenuOpen.value = !isMobileMenuOpen.value
+}
+
 const startCloseDropdown = () => {
   timeoutId.value = setTimeout(() => {
     isDropdownOpen.value = false;
@@ -93,7 +98,7 @@ const LogIn = async () => {
     localStorage.setItem('token', res.token)
     const resUser = await UseUser.fetchUser()
     isRole.value = resUser.user.role
-    emit('update:isAuthorized', true)
+    emit('update:is-authorized', true)
     emit('update:role', resUser.user.role as 0 | 1 | 2 | 3 | 4)
     closeModal()
   } else {
@@ -106,18 +111,22 @@ const LogOut = async () => {
   if (res.result) {
     isAuthorized.value = false
     isRole.value = 0
-    emit('update:isAuthorized', false)
+    emit('update:is-authorized', false)
     emit('update:role', 0)
     await router.push('/')
   }
 }
 
+watch(userPhoneNumber, () => {
+  error.value = false
+})
 onMounted(async () => {
   const token = localStorage.getItem('token');
   if (token) {
     const res = await UseUser.fetchUser()
     if (res.result){
       isAuthorized.value = true;
+      emit('update:is-authorized', true)
       isRole.value = res.user.role;
     }
   }
@@ -125,7 +134,14 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="flex gap-3">
+  <button
+      class="sm:hidden p-2"
+      @click="toggleMobileMenu"
+      aria-label="Open mobile menu"
+  >
+    <img src="@assets/icons/menu-hamburger.svg" alt="menu" />
+  </button>
+  <div class="sm:flex gap-3 hidden absolute sm:relative sm:w-auto">
     <button v-if="!isAuthorized" @click="isModalOpen = true" class="button button--outline">
       Войти
     </button>
@@ -142,10 +158,10 @@ onMounted(async () => {
            @mouseenter="openDropdown" @mouseleave="startCloseDropdown">
         <ul class=" py-2 text-sm">
           <li>
-            <NuxtLink href="/profile" class="block px-4 py-2 hover:bg-orange hover:text-white dark:hover:bg-background-dark-light dark:hover:text-main-contrast">Мой профиль</NuxtLink>
+            <NuxtLink to="/profile" class="block px-4 py-2 hover:bg-orange hover:text-white dark:hover:bg-background-dark-light dark:hover:text-main-contrast">Мой профиль</NuxtLink>
           </li>
           <li>
-            <a href="#" class="block px-4 py-2 hover:bg-orange hover:text-white dark:hover:bg-background-dark-light dark:hover:text-main-contrast">Заказы</a>
+            <NuxtLink to="/orders" class="block px-4 py-2 hover:bg-orange hover:text-white dark:hover:bg-background-dark-light dark:hover:text-main-contrast">Заказы</NuxtLink>
           </li>
           <li>
             <a href="#" @click="LogOut" class="block px-4 py-2 hover:bg-orange hover:text-white dark:hover:bg-background-dark-light dark:hover:text-main-contrast">Выйти</a>
@@ -153,76 +169,136 @@ onMounted(async () => {
         </ul>
       </div>
     </div>
-
-
-    <!-- Модалка -->
-    <div
-        id="static-modal" data-modal-backdrop="static"
-        aria-hidden="true"
-        :class="{'hidden': !isModalOpen, 'modal': isModalOpen}"
-    >
-      <template v-if="step === 1">
-        <form @submit.prevent="sendCode" class="modal modal--active">
-          <div class="modal__top">
-            <div class="modal__text">
-              <h2 class="modal__title">Вход в аккаунт</h2>
-              <p class="modal__description">Введите номер телефона, чтобы войти или зарегистрироваться</p>
-            </div>
-            <div class="modal__img"></div>
+  </div>
+  <div
+      id="static-modal" data-modal-backdrop="static"
+      aria-hidden="true"
+      :class="{'hidden': !isModalOpen, 'modal': isModalOpen}"
+  >
+    <template v-if="step === 1">
+      <form @submit.prevent="sendCode" class="modal modal--active">
+        <div class="modal__top">
+          <div class="modal__text">
+            <h2 class="modal__title">Вход в аккаунт</h2>
+            <p class="modal__description">Введите номер телефона, чтобы войти или зарегистрироваться</p>
           </div>
+          <div class="modal__img"></div>
+        </div>
 
-          <PhoneNumber v-model="userPhoneNumber" />
+        <PhoneNumber v-model="userPhoneNumber" />
 
-          <p v-show="error" class="modal__error">Введите полный номер</p>
+        <p v-show="error" class="modal__error">Введите полный номер</p>
 
-          <button type="submit" class="modal__btn" @keyup.enter="sendCode()">
-            <p class="modal__btn-text">Получить код в SMS</p>
-          </button>
-
-          <div @click="closeModal" type="button" class="modal__close cursor-pointer">
-            <img class="closeModal" src="../assets/icons/closeWhite.svg" alt="" />
-          </div>
-        </form>
-      </template>
-
-      <form v-else-if="step === 2" @submit.prevent="LogIn">
-        <div class="modal modal--active">
-          <div class="modal__top">
-            <div class="modal__text">
-              <h2 class="modal__title text-xl">Вход в аккаунт</h2>
-              <p class="modal__description">Введите СМС-код</p>
-            </div>
-            <div class="modal__img-code"></div>
-
-          </div>
-          <div class="code-input">
-            <input
-                v-for="(digit, i) in code"
-                :key="i"
-                v-model="code[i]"
-                type="text"
-                inputmode="numeric"
-                maxlength="1"
-                pattern="\d"
-                class="code-digit"
-                @input="focusNext(i)"
-                @keydown="handleKey($event, i)"
-            />
-          </div>
-          <div v-if="error" class="modal__error text-red">
-            <p class="text-center py-2">Неверный код или срок действия кода истёк</p>
-          </div>
-          <button type="submit" class="modal__btn btnLogIn w-full justify-center">
-            <p class="btnLogIn__text">Войти</p>
-          </button>
-          <button @click="closeModal" class="modal__close cursor-pointer">
-            <img class="closeModal" src="../assets/icons/closeWhite.svg" alt="" />
-          </button>
+        <button type="submit" class="modal__btn" @keyup.enter="sendCode()">
+          <p class="modal__btn-text">Получить код в SMS</p>
+        </button>
+        <div  type="button" class="modal__close cursor-pointer" @click="closeModal()">
+          <CloseIcon class="closeModal"/>
         </div>
       </form>
-    </div>
-  </div>
+    </template>
 
+    <form v-else-if="step === 2" @submit.prevent="LogIn">
+      <div class="modal modal--active">
+        <div class="modal__top">
+          <div class="modal__text">
+            <h2 class="modal__title text-xl">Вход в аккаунт</h2>
+            <p class="modal__description">Введите СМС-код</p>
+          </div>
+          <div class="modal__img-code"></div>
+
+        </div>
+        <div class="code-input">
+          <input
+              v-for="(digit, i) in code"
+              :key="i"
+              v-model="code[i]"
+              type="text"
+              inputmode="numeric"
+              maxlength="1"
+              pattern="\d"
+              class="code-digit"
+              @input="focusNext(i)"
+              @keydown="handleKey($event, i)"
+          />
+        </div>
+        <div v-if="error" class="modal__error text-red">
+          <p class="text-center py-2">Неверный код или срок действия кода истёк</p>
+        </div>
+        <button type="submit" class="modal__btn btnLogIn w-full justify-center">
+          <p class="btnLogIn__text">Войти</p>
+        </button>
+        <div  type="button" class="modal__close cursor-pointer" @click="closeModal()">
+          <CloseIcon class="closeModal"/>
+        </div>
+      </div>
+    </form>
+  </div>
+  <transition name="fade">
+    <div
+        v-if="isMobileMenuOpen"
+        class="fixed inset-0 z-50 bg-white flex flex-col p-6 overflow-auto"
+    >
+      <!-- шапка с крестиком -->
+      <div class="flex justify-end">
+        <button @click="toggleMobileMenu" aria-label="Close menu">
+          <CloseIcon class="w-6 h-6 fill-black opacity-20" />
+        </button>
+      </div>
+
+      <!-- содержимое: то же, что в десктоп-версии -->
+      <div class="mt-8 flex flex-col gap-4">
+        <button
+            v-if="!isAuthorized"
+            @click="isModalOpen = true; toggleMobileMenu()"
+            class="button button--outline w-full"
+        >
+          Войти
+        </button>
+
+        <template v-else>
+          <NuxtLink
+              v-if="isRole === 3"
+              to="/manager/home"
+              class="button button--outline w-full text-center"
+              @click="toggleMobileMenu"
+          >
+            Управление
+          </NuxtLink>
+          <NuxtLink
+              v-else-if="isRole === 4"
+              to="/admin/home"
+              class="button button--outline w-full text-center"
+              @click="toggleMobileMenu"
+          >
+            Админ
+          </NuxtLink>
+
+          <!-- дальше копируем обычные ссылки -->
+          <NuxtLink
+              to="/profile"
+              class="button button--outline w-full text-center"
+              @click="toggleMobileMenu"
+          >
+            Мой профиль
+          </NuxtLink>
+          <NuxtLink
+              to="/orders"
+              class="button button--outline w-full text-center"
+              @click="toggleMobileMenu"
+          >
+            Заказы
+          </NuxtLink>
+          <button
+              class="button button--outline w-full text-center"
+              @click="LogOut(); toggleMobileMenu()"
+          >
+            Выйти
+          </button>
+        </template>
+      </div>
+    </div>
+  </transition>
 </template>
 
 <style scoped lang="sass">
@@ -260,15 +336,15 @@ onMounted(async () => {
     @apply bg-white rounded-3xl -translate-y-2/4 -translate-x-1/2 absolute top-1/2 left-1/2 shadow-lg p-6 w-fit h-fit z-50
 
   &__title
-    @apply text-3xl font-semibold w-fit
+    @apply font-semibold w-fit text-2xl sm:text-3xl
 
   &__description
-    @apply max-w-64
+    @apply text-sm sm:text-base max-w-64
 
   &__img
+    @apply shrink-0 h-10 w-10 sm:h-14 sm:w-14 bg-contain m-0
     background-image: url('@/assets/images/phone.png')
-    width: 60px
-    height: 60px
+
   &__img-code
     background-image: url('@/assets/images/code.png')
     width: 60px
@@ -280,10 +356,10 @@ onMounted(async () => {
     @apply flex flex-col gap-3
 
   &__top
-    @apply flex items-center justify-between space-x-4
+    @apply flex items-center justify-between
 
   &__btn
-    @apply w-full
+    @apply w-full text-sm sm:text-base
     @include button-orange-gradient
 
   &__city
@@ -292,7 +368,7 @@ onMounted(async () => {
   &__text--hover
     @apply hover:text-orange duration-300 ease-in cursor-pointer w-fit
 .closeModal
-  @apply absolute top-1 -right-10;
+  @apply absolute top-1 -right-10 fill-white opacity-100;
 
 .code-input
   @apply flex gap-2 justify-center
@@ -302,5 +378,12 @@ onMounted(async () => {
 input::-webkit-outer-spin-button, input::-webkit-inner-spin-button
   -webkit-appearance: none
   margin: 0
+.fade-enter-active, .fade-leave-active
+  transition: opacity .3s
+.fade-enter-from, .fade-leave-to
+  opacity: 0
 
+button.p-2 img
+  width: 24px
+  height: 24px
 </style>

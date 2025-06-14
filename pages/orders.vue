@@ -8,12 +8,12 @@ import type {Store} from '@interfaces/store'
 
 const storeCity = useCityStore()
 const UseStore = useStore()
-const { getOrdersByStoreIdWithFilter, updateOrderStatus } = useOrder()
+const { getMyOrders, updateOrderStatus } = useOrder()
 
 const allStores = ref<Store[]>([])
 const selectedStore = ref<string | null>(null)
+const isAutorized = ref<boolean>(false)
 const orders = ref<Order[]>([])
-const EXCLUDE_STATUS_CODES = [2, 3]
 
 async function loadStores() {
   storeCity.initCityFromStorage()
@@ -25,11 +25,8 @@ async function loadStores() {
 
 async function loadOrders() {
   if (!selectedStore.value) return
-  const { orders: list } = await getOrdersByStoreIdWithFilter(
-      selectedStore.value,
-      EXCLUDE_STATUS_CODES
-  )
-  orders.value = list || []
+  const res = await getMyOrders()
+  orders.value = res.orders || []
 }
 
 async function onStatusChange(order: Order) {
@@ -45,16 +42,8 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="order-page">
-    <!-- выбор магазина -->
-    <div class="mb-4 flex items-center">
-      <p class="font-medium mr-2">Пункт самовывоза:</p>
-      <select v-model="selectedStore" class="grow p-3 rounded-full border-2 border-orange focus-within:outline-none">
-        <option v-for="s in allStores" :key="s.id" :value="s.id">
-          {{ s.address }}
-        </option>
-      </select>
-    </div>
+  <Header v-model:is-authorized="isAutorized"/>
+  <div class="order-page container">
 
     <div v-if="orders.length" class="grid sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
       <div
@@ -64,7 +53,10 @@ onMounted(async () => {
       >
         <div class="flex justify-between">
           <h3 class="text-lg font-semibold">Заказ №{{ order.id }}</h3>
-          <span :class="order.status===2?'text-green':'text-red'">
+          <span v-if="order.status===0 ||order.status===1" :class="order.status===0?'text-blue-600':'text-orange'">
+            {{ OrderStatusLabels[order.status] }}
+          </span>
+          <span v-if="order.status===2 ||order.status===3" :class="order.status===2?'text-green':'text-red'">
             {{ OrderStatusLabels[order.status] }}
           </span>
         </div>
@@ -79,6 +71,6 @@ onMounted(async () => {
       </div>
     </div>
 
-    <p v-else>Нет активных заказов.</p>
+    <p v-else>У Вас нет заказов.</p>
   </div>
 </template>

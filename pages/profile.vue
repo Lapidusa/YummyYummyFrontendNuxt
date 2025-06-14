@@ -11,6 +11,7 @@ const config = useRuntimeConfig()
 const userStore = useUserStore()
 const errorUpdate = ref<string>("");
 const successUpdate  = ref<string>("");
+const isAuthorized  = ref<boolean>(false);
 
 const user = computed<User | null>(() => userStore.user)
 
@@ -69,19 +70,19 @@ onMounted(() =>{
 })
 
 watch(
-    () => user.value,
-    (newUser) => {
-      if (newUser) {
-        fillFormWithUser(newUser)
-      }
+  () => user.value,
+  (newUser) => {
+    if (newUser) {
+      fillFormWithUser(newUser)
     }
+  }
 )
 </script>
 
 <template>
   <div class="profile">
     <div class="profile__header">
-      <Header />
+      <Header v-model:isAuthorized="isAuthorized"/>
     </div>
     <div class="profile__wrapper">
       <form class="profile__form" @submit.prevent="submitForm" enctype="multipart/form-data">

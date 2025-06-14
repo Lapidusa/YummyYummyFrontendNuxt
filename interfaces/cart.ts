@@ -8,7 +8,7 @@ export interface CartItemRequest {
   quantity: number;
   name?: string;
   dough?: Dough;
-  price: number;
+  price?: number;
   added_ingredients?: AddedIngredient[];
   removed_ingredients?: RemovedIngredient[];
   variant?: ProductVariant
@@ -29,6 +29,5 @@ export interface RemovedIngredient extends AddedIngredient{}
 export const createEmptyCartItem = (): CartItemRequest => ({
   type: 'simple',
   product_variant_id: '',
-  quantity: 0,
-  price: 0
+  quantity: 1,
 })

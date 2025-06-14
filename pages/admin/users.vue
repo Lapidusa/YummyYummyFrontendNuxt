@@ -8,6 +8,7 @@
   const user = reactive<User>(createEmptyUser());
   const users = ref<User[]>();
   const UseUser = useUser()
+
   const openModal = async (mode: typeof modalMode.value, data?: User)=>{
     modalMode.value = mode
     if (data !== undefined && (mode === 'update' || mode === 'delete')) {
@@ -131,7 +132,7 @@
   <div v-if="modalMode !=='none'" class="modal-user">
     <div class="modal-user modal-user--active">
       <div class="modal-user__close cursor-pointer" @click="closeModal">
-        <img class="closeModal" src="@assets/icons/closeWhite.svg" alt="Закрыть" />
+        <CloseIcon class="closeModal"/>
       </div>
 
       <div v-if="modalMode === 'add' || modalMode === 'update'" class="flex flex-col gap-4">

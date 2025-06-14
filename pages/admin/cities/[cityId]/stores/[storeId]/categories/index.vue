@@ -11,6 +11,7 @@
     createEmptyCategory
   } from "@interfaces/category";
   import {type Store} from "@interfaces/store";
+  import CloseIcon from "@components/icons/closeIcon.vue";
 
   const UseCategory = useCategory();
   const UseStore = useStore();
@@ -137,7 +138,7 @@
   <div v-if="modalMode !== 'none'" class="modal-category" data-modal-backdrop="static">
     <div class="modal-category modal-category--active">
       <div class="modal-category__close cursor-pointer" @click="closeModal">
-        <img class="closeModal" src="@assets/icons/closeWhite.svg" alt="Закрыть" />
+        <CloseIcon class="closeModal"/>
       </div>
       <div class="modal-category__container">
         <template v-if="modalMode === 'add' || modalMode === 'update'">
@@ -262,5 +263,5 @@
     @include button-orange-outline
     @apply flex-1
 .closeModal
-  @apply absolute top-1 -right-10;
+  @apply absolute top-1 -right-10 opacity-100 fill-white
 </style>

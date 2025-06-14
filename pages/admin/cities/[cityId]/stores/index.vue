@@ -8,6 +8,7 @@
   import {createEmptyStore, type Store, StoreFieldLabels} from "@interfaces/store";
   import {validateEmptyFieldsByLabels} from "@/utils/validators";
   import type {City} from "@interfaces/city";
+  import CloseIcon from "@components/icons/closeIcon.vue";
 
   const MapEditable = defineAsyncComponent(() =>
     process.client ? import('@components/maps/MapEditable.vue') : Promise.resolve({})
@@ -144,7 +145,7 @@
     :class="{'modal-store--small': modalMode === 'delete'}">
 
       <div class="modal-store__close cursor-pointer" @click="closeModal">
-        <img class="closeModal" src="@assets/icons/closeWhite.svg" alt="Закрыть" />
+        <CloseIcon class="closeModal"/>
       </div>
       <div class="modal-store__container">
         <template v-if="modalMode === 'view'">
@@ -279,7 +280,7 @@
     @apply flex-1
 
 .closeModal
-  @apply absolute top-1 -right-10;
+  @apply absolute top-1 -right-10 opacity-100 fill-white
 
 b
   font-weight: 800

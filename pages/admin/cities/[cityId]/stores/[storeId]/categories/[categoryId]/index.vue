@@ -13,6 +13,7 @@
   import { useCategory } from "@composable/useCategory";
   import { useProduct } from "@composable/useProduct";
   import { useIngredient } from "@composable/useIngredient";
+  import CloseIcon from "@components/icons/closeIcon.vue";
 
   const config = useRuntimeConfig()
   const route = useRoute();
@@ -460,7 +461,7 @@
   <div v-if="modalMode !== 'none'" class="modal-product" data-modal-backdrop="static">
   <div class="modal-product modal-product--active">
     <div class="modal-product__close cursor-pointer" @click="closeModal">
-      <img class="closeModal" src="@assets/icons/closeWhite.svg" alt="Закрыть" />
+      <CloseIcon class="closeModal"/>
     </div>
     <div class="modal-product__container">
       <template v-if="modalMode === 'add' || modalMode === 'update'">
@@ -704,7 +705,7 @@
   <div v-if="modalModeIngredients !== 'none'" class="modal-ingredient">
     <div class="modal-ingredient modal-ingredient--active">
       <div class="modal-ingredient__close cursor-pointer" @click="closeModal">
-        <img class="closeModal" src="@assets/icons/closeWhite.svg" alt="Закрыть" />
+        <CloseIcon class="closeModal"/>
       </div>
 
       <div class="modal-ingredient__container">
@@ -807,8 +808,8 @@
   @apply fixed inset-0 bg-black bg-opacity-70 z-[1000]
 
   &--active
-    @apply bg-white rounded-3xl -translate-y-2/4 w-max -translate-x-1/2 absolute max-w-[80%]
-    @apply flex flex-col top-1/2 left-1/2 shadow-lg p-6 z-50 h-max
+    @apply bg-white rounded-3xl -translate-y-2/4 w-fit -translate-x-1/2 absolute max-w-[80%]
+    @apply flex flex-col top-1/2 left-1/2 shadow-lg p-6 z-50 h-max overflow-visible
 
   &--small
     @apply w-fit h-fit
@@ -887,7 +888,7 @@
     @apply flex gap-2
 
 .closeModal
-  @apply absolute top-1 -right-10;
+  @apply absolute top-0 -right-5 opacity-100 fill-white
 
 label
   @apply flex gap-2 items-center

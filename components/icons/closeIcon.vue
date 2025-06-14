@@ -1,7 +1,3 @@
-<script setup lang="ts">
-
-</script>
-
 <template>
   <svg
       width="30"
@@ -15,7 +11,3 @@
     />
   </svg>
 </template>
-
-<style scoped lang="sass">
-
-</style>

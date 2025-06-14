@@ -1,6 +1,6 @@
 import {useApi} from "@composable/api";
 import {useAuth} from "@composable/useAuth";
-import type {Product} from "@interfaces/product";
+import type {Product, ProductResponse} from "@interfaces/product";
 
 export const useProduct = () => {
   const api = useApi();
@@ -22,32 +22,43 @@ export const useProduct = () => {
   }
 
   const createProduct = async (productData: Product) => {
-    const token = auth.getToken();
+    const token = auth.getToken()
     if (!token) return
 
-    const formData = new FormData();
-    const mappedVariants = productData.variants.map(v => ({
-      ...v,
-      image: typeof v.image === 'string' ? v.image : null,
-    }));
+    // 1) Убираем id из продукта
+    const { id: _prodId, variants, ...dataWithoutId } = productData
 
-    const mappedData = {
-      ...productData,
-      variants: mappedVariants,
-    };
+    // 2) Убираем id из каждого варианта
+    const cleanedVariants = variants.map(v => {
+      const { id: _variantId, image, ...rest } = v
+      return {
+        ...rest,
+        // в formData берем либо файл, либо оставляем null
+        image: typeof image === 'string' ? null : image,
+      }
+    })
 
-    formData.append("product_data_json", JSON.stringify(mappedData));
+    // 3) Собираем уже чистый объект для JSON
+    const payload = {
+      ...dataWithoutId,
+      variants: cleanedVariants,
+    }
 
-    productData.variants.forEach((v) => {
-      formData.append("images", v.image!);
-    });
+    // 4) Запаковываем в FormData
+    const formData = new FormData()
+    formData.append('product_data_json', JSON.stringify(payload))
+
+    // И отдельно загружаем картинки
+    cleanedVariants.forEach(v => {
+      if (v.image instanceof File) {
+        formData.append('images', v.image)
+      }
+    })
 
     const res = await api.post(`/product/create/`, formData, {
-      headers: {
-        token: token,
-      }
-    });
-    return res.data;
+      headers: { token }
+    })
+    return res.data
   }
 
   const updateProduct = async (productData: Product) => {

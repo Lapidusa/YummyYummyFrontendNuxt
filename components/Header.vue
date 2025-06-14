@@ -5,7 +5,9 @@
   import {useCity} from "@composable/useCity";
   import type {City} from "@interfaces/city";
   import {useCityStore} from "@store/city";
-  const isDropdownOpen = ref<boolean>(false);
+  import CloseIcon from "@components/icons/closeIcon.vue";
+  import {useUserStore} from "@store/user";
+  import type {User} from "@interfaces/user";
   const isModalCityOpen = ref<boolean>(false);
   const isModalStoreOpen = ref<boolean>(false);
   const isAuthorized = ref<boolean>(false);
@@ -21,15 +23,17 @@
   const searchTerm = ref<string>('');
   const props = defineProps<{ isAuthorized: boolean }>()
   const emit = defineEmits<{
-    (e: 'update:isAuthorized', value: boolean): void
+    (e: 'update:is-authorized', value: boolean): void
   }>()
   const Auth = useAuth()
   const UseUser = useUser()
   const UseCity = useCity()
   const cityStore = useCityStore()
+  const userStore = useUserStore();
+
   const city = computed(() => cityStore.city)
   const timeoutId = ref<ReturnType<typeof setTimeout>>();
-
+  const userData = computed<User | null>(() => userStore.user);
   const allCities = ref<{ cities: City[] }>({ cities: [] })
   const activeCity = ref<City | null>(null)
 
@@ -61,7 +65,7 @@
 
     if(res.result) {
       isAuthorized.value = true;
-      emit('update:isAuthorized', true)
+      emit('update:is-authorized', true)
       changeModal.value = false;
       isModalOpen.value = false;
       error.value = false;
@@ -114,13 +118,10 @@
 
     switch(option) {
       case 'address':
-        console.log('Пользователь выбрал указать адрес доставки')
         break
       case 'pickup':
-        console.log('Пользователь выбрал самовывоз из пиццерии')
         break
       case 'login':
-        console.log('Пользователь выбрал войти')
         break
     }
   }
@@ -128,7 +129,6 @@
   const closeStoreModal = () => {
     isModalStoreOpen.value = false
   }
-
   onMounted(async () => {
     allCities.value = await UseCity.getAllCities()
     cityStore.initCityFromStorage()
@@ -151,7 +151,7 @@
     </div>
     <div class="header__right">
       <AuthButton
-          @update:isAuthorized="isAuthorized = $event"
+          @update:is-authorized="isAuthorized = $event"
           @update:role="isRole = $event"
       >
         <template #default="{ isRole, logOut }">
@@ -191,12 +191,11 @@
         </div>
       </div>
       <div @click="changeModalCities" v-if="activeCity" type="button" class="modal-header__close cursor-pointer">
-        <img class="closeModal" src="@assets/icons/closeWhite.svg" alt="" />
+        <CloseIcon class="closeModal"/>
       </div>
     </div>
   </div>
 
-  <!-- Модалка выбора магазина / способа получения -->
   <div
       id="store-modal" data-modal-backdrop="static"
       aria-hidden="true"
@@ -208,21 +207,20 @@
       </div>
       <div class="modal-header__buttons">
         <button @click="handleDeliveryOption('address')" class="modal-button">
-          Указать адрес доставки
+          Закажу через доставу
         </button>
         <button @click="handleDeliveryOption('pickup')" class="modal-button">
           Забрать из пиццерии
         </button>
-        <button @click="handleDeliveryOption('login')" class="modal-button">
+        <button v-if="!userData" @click="handleDeliveryOption('login')" class="modal-button">
           Войти
         </button>
       </div>
       <div @click="closeStoreModal" type="button" class="modal-header__close cursor-pointer">
-        <img class="closeModal" src="@assets/icons/closeWhite.svg" alt="" />
+        <CloseIcon class="closeModal"/>
       </div>
     </div>
   </div>
-
 </template>
 
 <style scoped lang="sass">
@@ -253,7 +251,7 @@
         background-image: url('@/assets/icons/profile-hover.svg')
 
 .modal-header
-  @apply fixed inset-0 bg-black bg-opacity-50 flex flex-col gap-3
+  @apply fixed inset-0 bg-black bg-opacity-50 flex flex-col gap-3 z-50
 
   &__search
     @apply relative
@@ -268,7 +266,10 @@
     @apply bg-white rounded-3xl -translate-y-2/4 -translate-x-1/2 absolute top-1/2 left-1/2 shadow-lg p-6 w-fit h-fit z-50
 
   &__title
-    @apply text-3xl font-semibold
+    @apply text-2xl sm:text-3xl font-semibold
+
+  &__buttons
+    @apply flex flex-col gap-4
 
   &__img
     background-image: url('@/assets/images/phone.png')
@@ -289,7 +290,7 @@
     @apply hover:text-orange duration-300 ease-in cursor-pointer w-fit
 
 .closeModal
-  @apply absolute top-1 -right-10;
+  @apply absolute top-1 -right-10 fill-white opacity-100;
 
 .otp-input
   width: 40px
@@ -300,4 +301,9 @@
   border-radius: 5px
   outline: none
   padding: 0
+
+.modal-button
+  @include button-orange-outline
+  &:last-child
+    @include button-orange-gradient
 </style>
